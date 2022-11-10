@@ -21,7 +21,7 @@ extern	void paginginit(void);	/* Initializes the page tables	*/
 struct	procent	proctab[NPROC];	/* Process table			*/
 struct	sentry	semtab[NSEM];	/* Semaphore table			*/
 struct	memblk	memlist;	    /* List of free memory blocks		*/
-struct  frame_t invpt[NFRAMES]; /* Inverted page table */
+        frame_t invpt[NFRAMES]; /* Inverted page table */
 
 /* Active system status */
 

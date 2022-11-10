@@ -1,7 +1,5 @@
 /* paging.h */
 
-//typedef unsigned int   bsd_t;
-
 /* Structure for a page directory entry */
 
 typedef struct {
@@ -34,33 +32,55 @@ typedef struct {
   unsigned int pt_base  : 20;     /* location of page?    */
 } pt_t;
 
-/* Prototypes for required API calls */
-//SYSCALL xmmap(int, bsd_t, int);
-//SYSCALL xmunmap(int);
-
-#define NBPG    4096  /* number of bytes per page   */
+#define NBPG      4096  /* number of bytes per page   */
 #define FRAME0    1024  /* zero-th frame    */
-#define NFRAMES     3072  /* number of frames     */
+#define NFRAMES   3072  /* number of frames     */
+#define NENTRIES  1024  /* 4 byte entries per page */
 
-#define MAP_SHARED 1
+#define MAP_SHARED  1
 #define MAP_PRIVATE 2
 
-#define FIFO 3
+#define FIFO     3
 #define MYPOLICY 4
 
 #define MAX_ID    7     /* You get 8 mappings, 0 - 7 */
-#define MIN_ID          0
+#define MIN_ID    0
+
+/* Specification of regions as decribed in Lab 5 */
+
+#define region  uint8
+
+#define REGION_D   0
+#define NFRAMES_D  1000
+
+#define REGION_E1  1
+#define NFRAMES_E1 1024
+
+#define REGION_E2  2
+#define NFRAMES_E2 1048
 
 /* Structure for an inverted page table entry */
 
-#define FR_FREE 0 /* frame is free */
-#define FR_USED 1 /* frame is used */
+#define FR_FREE  0 /* frame is free */
+#define FR_USEDD 1 /* frame is used for directory */
+#define FR_USEDT 2 /* frame is used for table */
+#define FR_USEDH 3 /* frame is used for heap */
 
-struct frame_t {
+typedef struct {
   pid32        fr_pid;          /* owner of frame */
-  unsigned int fr_page;         /* logical page number of frame */
-  unsigned int fr_state : 1;    /* state of frame */
-};
+  unsigned int fr_state : 2;    /* state of frame */
+} frame_t;
 
 extern struct frame_t invpt[NFRAMES];  /* inverted page table
                                         * for regions D, E1, E2 */
+
+/* Prototypes required for paging */
+
+/* in file newpd.c */
+extern pd_t *newpd();
+
+/* in file newpt.c */
+extern pt_t *newpt();
+
+/* in file getfreeframe.c */
+extern int16 getfreeframe(region r);
