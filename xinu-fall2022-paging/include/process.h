@@ -4,11 +4,11 @@
 #define XINUTEST 1
 
 #if XINUDEBUG
-#define D(x) x
-#define PDF(...) kprintf(__VA_ARGS__)
+#define Dbg(x) x
+#define Dpf(...) kprintf(__VA_ARGS__)
 #else
-#define D(x) ;
-#define PDF(...) ;
+#define Dbg(x) ;
+#define Dpf(...) ;
 #endif
 
 /* Maximum number of processes in the system */
