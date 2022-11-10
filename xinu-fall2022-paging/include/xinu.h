@@ -2,6 +2,7 @@
 
 #include <kernel.h>
 #include <conf.h>
+#include <paging.h>
 #include <process.h>
 #include <queue.h>
 #include <resched.h>
@@ -40,5 +41,4 @@
 #include <multiboot.h>
 #include <stdio.h>
 #include <string.h>
-#include <paging.h>
 #include <page_server.h>

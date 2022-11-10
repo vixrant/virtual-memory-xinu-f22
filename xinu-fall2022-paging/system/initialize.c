@@ -22,6 +22,7 @@ struct	procent	proctab[NPROC];	/* Process table			*/
 struct	sentry	semtab[NSEM];	/* Semaphore table			*/
 struct	memblk	memlist;	    /* List of free memory blocks		*/
         frame_t invpt[NFRAMES]; /* Inverted page table */
+        pt_t    *identity_pt[5];/* Identity mapping for regions */
 
 /* Active system status */
 
@@ -76,16 +77,6 @@ void	nulluser()
 	kprintf("           [0x%08X to 0x%08X]\n\n",
 		(uint32)&data, (uint32)&ebss - 1);
 
-	/* Create the RDS process */
-	/*
-	rdstab[0].rd_comproc = create(rdsprocess, RD_STACK, RD_PRIO,
-					"rdsproc", 1, &rdstab[0]);
-	if(rdstab[0].rd_comproc == SYSERR) {
-		panic("Cannot create remote disk process");
-	}
-	resume(rdstab[0].rd_comproc);
-	*/
-
 	/* Enable interrupts */
 
 	enable();
@@ -129,10 +120,6 @@ static	void	sysinit()
 	
 	meminit();
 
-	/* Initialize the first few page tables */
-
-	paginginit();
-
 	/* Initialize system variables */
 
 	/* Count the Null process as the first process in the system */
@@ -151,6 +138,7 @@ static	void	sysinit()
 		prptr->prname[0] = NULLCH;
 		prptr->prstkbase = NULL;
 		prptr->prprio = 0;
+		prptr->prpd = NULL;
 	}
 
 	/* Initialize the Null process entry */	
@@ -162,7 +150,12 @@ static	void	sysinit()
 	prptr->prstkbase = getstk(NULLSTK);
 	prptr->prstklen = NULLSTK;
 	prptr->prstkptr = 0;
+	prptr->prpd = newpd();
 	currpid = NULLPROC;
+
+	/* Initialize pagin */
+
+	paginginit(prptr->prpd);
 	
 	/* Initialize semaphores */
 

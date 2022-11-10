@@ -51,13 +51,14 @@ typedef struct {
 #define region  uint8
 
 #define REGION_D   0
-#define NFRAMES_D  1000
-
 #define REGION_E1  1
-#define NFRAMES_E1 1024
-
 #define REGION_E2  2
+
+#define NFRAMES_D  1000
+#define NFRAMES_E1 1024
 #define NFRAMES_E2 1048
+
+#define REGION_G_FRAME0 576
 
 /* Structure for an inverted page table entry */
 
@@ -71,16 +72,22 @@ typedef struct {
   unsigned int fr_state : 2;    /* state of frame */
 } frame_t;
 
-extern struct frame_t invpt[NFRAMES];  /* inverted page table
-                                        * for regions D, E1, E2 */
+extern frame_t invpt[NFRAMES];  /* inverted page table
+                                 * for regions D, E1, E2 */
+
+/* Identity maps for regions A, B, C, D, E1, E2, G */
+extern pt_t *identity_pt[5];
 
 /* Prototypes required for paging */
 
 /* in file newpd.c */
-extern pd_t *newpd();
+extern pd_t *newpd(void);
 
 /* in file newpt.c */
-extern pt_t *newpt();
+extern pt_t *newpt(void);
+
+/* in file paginginit.c */
+extern int16 paginginit(pd_t*);
 
 /* in file getfreeframe.c */
-extern int16 getfreeframe(region r);
+extern int16 getfreeframe(region);
