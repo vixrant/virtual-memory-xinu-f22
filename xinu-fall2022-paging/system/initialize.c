@@ -14,15 +14,15 @@ extern	void main(void);	/* Main is the first process created	*/
 extern	void xdone(void);	/* System "shutdown" procedure		*/
 static	void sysinit(); 	/* Internal system initialization	*/
 extern	void meminit(void);	/* Initializes the free memory list	*/
-extern	void paginginit(void);	/* Initializes the page tables	*/
+extern	int16 paginginit(pd_t *);	/* Initializes the page tables	*/
 
 /* Declarations of major kernel variables */
 
 struct	procent	proctab[NPROC];	/* Process table			*/
 struct	sentry	semtab[NSEM];	/* Semaphore table			*/
 struct	memblk	memlist;	    /* List of free memory blocks		*/
-        frame_t invpt[NFRAMES]; /* Inverted page table */
-        pt_t    *identity_pt[5];/* Identity mapping for regions */
+frame_t invpt[NFRAMES];         /* Inverted page table */
+pt_t *identity_pt[5];           /* Identity mapping for regions */
 
 /* Active system status */
 
@@ -64,7 +64,7 @@ void	nulluser()
 	}
 	kprintf("%10d bytes of free memory.  Free list:\n", free_mem);
 	for (memptr=memlist.mnext; memptr!=NULL;memptr = memptr->mnext) {
-	    kprintf("           [0x%08X to 0x%08X]\r\n",
+		kprintf("           [0x%08X to 0x%08X]\r\n",
 		(uint32)memptr, ((uint32)memptr) + memptr->mlength - 1);
 	}
 
@@ -85,7 +85,7 @@ void	nulluser()
 
 	resume (
 	   create((void *)main, INITSTK, INITPRIO, "Main process", 0,
-           NULL));
+			  NULL));
 
 	/* Become the Null process (i.e., guarantee that the CPU has	*/
 	/*  something to run when no other process is ready to execute)	*/
@@ -178,12 +178,14 @@ static	void	sysinit()
 
 	clkinit();
 
+	pdf("Setting up devices \n");
 	for (i = 0; i < NDEVS; i++) {
 		init(i);
 	}
+	pdf("Devices set-up \n");
 
-        PAGE_SERVER_STATUS = PAGE_SERVER_INACTIVE;
-        bs_init_sem = semcreate(1);
+		PAGE_SERVER_STATUS = PAGE_SERVER_INACTIVE;
+		bs_init_sem = semcreate(1);
 
 	return;
 }

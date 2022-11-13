@@ -58,6 +58,7 @@ extern	struct	dentry	devtab[]; /* one entry per device */
 
 #define	NPROC	     100	/* number of user processes		*/
 #define	NSEM	     100	/* number of semaphores			*/
+#define PGFBASE      14     /* base ivec for page fault handler */
 #define	IRQBASE	     32		/* base ivec for IRQ0			*/
 #define	IRQ_TIMER    IRQ_HW5	/* timer IRQ is wired to hardware 5	*/
 #define	IRQ_ATH_MISC IRQ_HW4	/* Misc. IRQ is wired to hardware 4	*/

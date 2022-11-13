@@ -1,0 +1,4 @@
+#!/bin/sh
+
+rsync -r ./* vgajria@xinu04.cs.purdue.edu:~/cs503/lab5
+echo "Upload complete"

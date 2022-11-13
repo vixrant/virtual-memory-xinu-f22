@@ -1,14 +1,14 @@
 /* process.h - isbadpid */
 
-#define XINUDEBUG 0
+#define XINUDEBUG 1
 #define XINUTEST 1
 
 #if XINUDEBUG
-#define Dbg(x) x
-#define Dpf(...) kprintf(__VA_ARGS__)
+#define dbg(x) x
+#define pdf(...) kprintf(__VA_ARGS__)
 #else
-#define Dbg(x) ;
-#define Dpf(...) ;
+#define dbg(x) ;
+#define pdf(...) ;
 #endif
 
 /* Maximum number of processes in the system */

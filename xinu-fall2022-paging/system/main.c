@@ -10,10 +10,6 @@ process	main(void)
 	/* DO NOT REMOVE OR COMMENT THIS CALL */
 	netstart();
 
-	/* Initialize the page server */
-	/* DO NOT REMOVE OR COMMENT THIS CALL */
-	// psinit();
-
 	// Insert test code below
 
 	kprintf("Hello World\n");

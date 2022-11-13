@@ -28,7 +28,7 @@ pd_t *newpd(void) {
 
     // Treat it as an array of 1024 entries
     for (fi = 0; fi < NENTRIES; fi++) {
-        pdptr[fi].pd_pres   = 0; // Page absent by default
+        pdptr[fi].pd_pres   = 1; // Page present by default
         pdptr[fi].pd_write  = 1; // Writable
         pdptr[fi].pd_user   = 0; // No protection in this lab
         pdptr[fi].pd_pwt    = 0; // Don't write through

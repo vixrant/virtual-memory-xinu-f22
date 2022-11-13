@@ -28,7 +28,7 @@ pt_t *newpt(void) {
 
     // Treat it as an array of 1024 entries
     for (fi = 0; fi < NENTRIES; fi++) {
-        ptptr[fi].pt_pres   = 0; // Page absent by default
+        ptptr[fi].pt_pres   = 1; // Page present by default
         ptptr[fi].pt_write  = 1; // Writable
         ptptr[fi].pt_user   = 0; // No protection in this lab
         ptptr[fi].pt_pwt    = 0; // Don't write through
