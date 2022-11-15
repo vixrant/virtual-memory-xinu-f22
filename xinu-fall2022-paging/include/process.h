@@ -64,7 +64,7 @@ struct procent {		/* Entry in the process table		*/
 	bool8	prhasmsg;	/* Nonzero iff msg is valid		*/
 	int16	prdesc[NDESC];	/* Device descriptors for process	*/
 
-	pd_t          *prpd;      /* Page directory */
+	pd_t    *prpd;      /* Page directory */
 };
 
 /* Marker for the top of a process stack (used to help detect overflow)	*/

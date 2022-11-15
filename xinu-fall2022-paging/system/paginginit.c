@@ -2,7 +2,7 @@
 
 #include <xinu.h>
 
-static int16 _identity_pt_init(void) {
+static inline int16 __identity_pt_init(void) {
     uint16 i, j; /* Initialization loop iterator */
     pt_t *ptptr;
 
@@ -41,36 +41,23 @@ int16 paginginit() {
     }
 
     // 2. Set up shared page tables
-    if(_identity_pt_init() == SYSERR) {
+    if(__identity_pt_init() == SYSERR) {
         return SYSERR;
     }
 
     // 3. Set up null process's page directory
-    pd_t *nullprocpd = newpd();
-    for(i = 0; i < 4; i++) { // Regions A - E2
-        nullprocpd[i].pd_pres = 1;
-        nullprocpd[i].pd_write = 1;
-        nullprocpd[i].pd_base = ((unsigned int) identity_pt[i]) / NBPG;
-    }
-
-    // Regions G
-    nullprocpd[REGION_G_PD].pd_pres = 1;
-    nullprocpd[REGION_G_PD].pd_write = 1;
-    nullprocpd[REGION_G_PD].pd_base = ((unsigned int) identity_pt[4]) / NBPG;
-
-    prptr->prpd = nullprocpd;
+    prptr->prpd = newpd();
 
     // 4. Set-up CR3 with null process's page directory
-    /* pdsw(nullprocpd); */
-    asm ("movl %0, %%cr3" : : "r" (nullprocpd));
     pdf("paginginit - set CR3 \n");
+    pdsw(prptr->prpd);
 
     // 5. Set page fault handler
 	set_evec(14, (uint32) pgfdisp);
 
-    // 5. Enable paging
-    pagingenable();
+    // 6. Enable paging
     pdf("paginginit - enabled paging \n");
+    pagingenable();
 
     return OK;
 }

@@ -41,7 +41,8 @@ void	resched(void)		/* Assumes interrupts are disabled	*/
 	ptnew = &proctab[currpid];
 	ptnew->prstate = PR_CURR;
 	preempt = QUANTUM;		/* Reset time slice for process	*/
-	ctxsw(&ptold->prstkptr, &ptnew->prstkptr);
+	pdsw(ptnew->prpd); // Page directory switch
+	ctxsw(&ptold->prstkptr, &ptnew->prstkptr); // Context switch
 
 	/* Old process returns here when resumed */
 

@@ -173,11 +173,9 @@ static	void	sysinit()
 
 	clkinit();
 
-	pdf("Setting up devices \n");
 	for (i = 0; i < NDEVS; i++) {
 		init(i);
 	}
-	pdf("Devices set-up \n");
 
 		PAGE_SERVER_STATUS = PAGE_SERVER_INACTIVE;
 		bs_init_sem = semcreate(1);

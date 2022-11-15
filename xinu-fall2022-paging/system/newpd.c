@@ -10,7 +10,14 @@ pd_t *newpd(void) {
     int16 frame_idx; /* Index of frame in inverted page table */
     frame_t *frptr; /* Pointer to frame in inverted page table */
     pd_t *pdptr; /* Memory location */
-    uint16 fi; /* Initialization loop iterator */
+    uint16 i; /* Initialization loop iterator */
+
+    // Creating new page directory without initializing shared page tables
+    for(i = 0; i < 5; i++) {
+        if(identity_pt[i] == 0) {
+            return (pd_t*) SYSERR;
+        }
+    }
 
     // Get a free frame
     pdf("newpd - Finding frame \n");
@@ -24,22 +31,21 @@ pd_t *newpd(void) {
     frptr->fr_state = FR_USEDD;
     frptr->fr_pid = currpid;
 
-    // Initialize page table
+    // Initialize page directory
     pdptr = (pd_t*) ((FRAME0 + frame_idx) * NBPG);
+    memset(pdptr, 0, NBPG);
 
-    // Treat it as an array of 1024 entries
-    for (fi = 0; fi < NENTRIES; fi++) {
-        pdptr[fi].pd_pres   = 0; // Page present by default
-        pdptr[fi].pd_write  = 0; // Writable
-        pdptr[fi].pd_user   = 0; // No protection in this lab
-        pdptr[fi].pd_pwt    = 0; // Don't write through
-        pdptr[fi].pd_pcd    = 0; // Cache definitely
-        pdptr[fi].pd_acc    = 0; // Not accessed currently
-        pdptr[fi].pd_mbz    = 0; // Must not be zero
-        pdptr[fi].pd_fmb    = 0; // Pages are 4KB
-        pdptr[fi].pd_global = 0; // What is this?
-        pdptr[fi].pd_avail  = 0; // For custom use
-        pdptr[fi].pd_base   = 0; // Dummy
+    // Add shared page tables
+    {
+        // Regions A - E2
+        for(i = 0; i < 4; i++) {
+            pdptr[i].pd_pres = 1;
+            pdptr[i].pd_base = ((unsigned int) identity_pt[i]) / NBPG;
+        }
+
+        // Add shared page tables: Region G
+        pdptr[REGION_G_PD].pd_pres = 1;
+        pdptr[REGION_G_PD].pd_base = ((unsigned int) identity_pt[4]) / NBPG;
     }
 
     // Return initialized page

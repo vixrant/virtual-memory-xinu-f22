@@ -12,11 +12,10 @@ pgfdisp:
         cli             # Disable further interrupts
         movb    $EOI,%al    # Reset interrupt
         outb    %al,$OCW1_2
-        movl    %esp, %ebp
 
         movl    %cr2, %ebx
-        pushl   %ebx
-        pushl   12(%ebp)
+        pushl   %ebx // Push CR2
+        pushl   36(%esp) // Push Error Code
         call    pgfhandler  # Call high level handler
         popl    %ebx
         popl    %ebx

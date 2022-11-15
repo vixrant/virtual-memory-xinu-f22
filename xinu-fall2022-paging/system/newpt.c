@@ -10,7 +10,6 @@ pt_t *newpt(void) {
     int16 frame_idx; /* Index of frame in inverted page table */
     frame_t *frptr; /* Pointer to frame in inverted page table */
     pt_t *ptptr; /* Memory location */
-    uint16 fi; /* Initialization loop iterator */
 
     // Get a free frame
     pdf("newpt - Finding frame \n");
@@ -26,21 +25,7 @@ pt_t *newpt(void) {
 
     // Initialize page table
     ptptr = (pt_t*) ((FRAME0 + frame_idx) * NBPG);
-
-    // Treat it as an array of 1024 entries
-    for (fi = 0; fi < NENTRIES; fi++) {
-        ptptr[fi].pt_pres   = 0; // Page present by default
-        ptptr[fi].pt_write  = 0; // Writable
-        ptptr[fi].pt_user   = 0; // No protection in this lab
-        ptptr[fi].pt_pwt    = 0; // Don't write through
-        ptptr[fi].pt_pcd    = 0; // Cache definitely
-        ptptr[fi].pt_acc    = 0; // Not accessed currently
-        ptptr[fi].pt_dirty  = 0; // Page not written
-        ptptr[fi].pt_mbz    = 0; // Must not be zero
-        ptptr[fi].pt_global = 0; // What is this?
-        ptptr[fi].pt_avail  = 0; // For custom use
-        ptptr[fi].pt_base   = 0; // Dummy
-    }
+    memset(ptptr, 0, NBPG);
 
     // Return initialized page
     return ptptr;
