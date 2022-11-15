@@ -60,6 +60,10 @@ typedef struct {
 
 #define REGION_G_PD 576
 
+/* Region VF */
+
+#define MAXHSIZE 1024
+
 /* Structure for an inverted page table entry */
 
 #define FR_FREE  0 /* frame is free */
@@ -111,7 +115,13 @@ extern void pdsw(pd_t*);
 extern intmask pagingenable(void);
 
 /* in file pgfdisp.S */
-extern	void pgfdisp(void);
+extern void pgfdisp(void);
 
 /* in file pgfhandler.c */
-extern	interrupt pgfhandler(pgf_t, uint32);
+extern interrupt pgfhandler(pgf_t, uint32);
+
+/* in file vmhgetmem.c */
+extern char *vmhgetmem(uint16);
+
+/* in file vmhfreemem.c */
+extern syscall vmhfreemem(char*, uint16);

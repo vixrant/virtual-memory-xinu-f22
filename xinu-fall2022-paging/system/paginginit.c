@@ -15,6 +15,7 @@ static int16 _identity_pt_init(void) {
         // Initialize each entry
         for(j = 0; j < NENTRIES; j++) {
             ptptr[j].pt_pres = 1;
+            ptptr[j].pt_write = 1;
 
             // Base bits
             if(i == 4) // Regions G
@@ -30,7 +31,8 @@ static int16 _identity_pt_init(void) {
     return OK;
 }
 
-int16 paginginit(pd_t *nullprocpd) {
+int16 paginginit() {
+    struct procent *prptr = &proctab[NULLPROC];
     uint16 i; /* Initialization loop iterator */
 
     // 1. Set all entries in inverted page table to FREE
@@ -44,14 +46,19 @@ int16 paginginit(pd_t *nullprocpd) {
     }
 
     // 3. Set up null process's page directory
+    pd_t *nullprocpd = newpd();
     for(i = 0; i < 4; i++) { // Regions A - E2
         nullprocpd[i].pd_pres = 1;
+        nullprocpd[i].pd_write = 1;
         nullprocpd[i].pd_base = ((unsigned int) identity_pt[i]) / NBPG;
     }
 
     // Regions G
     nullprocpd[REGION_G_PD].pd_pres = 1;
+    nullprocpd[REGION_G_PD].pd_write = 1;
     nullprocpd[REGION_G_PD].pd_base = ((unsigned int) identity_pt[4]) / NBPG;
+
+    prptr->prpd = nullprocpd;
 
     // 4. Set-up CR3 with null process's page directory
     /* pdsw(nullprocpd); */

@@ -13,6 +13,7 @@ pd_t *newpd(void) {
     uint16 fi; /* Initialization loop iterator */
 
     // Get a free frame
+    pdf("newpd - Finding frame \n");
     frame_idx = getfreeframe(REGION_D);
     if(frame_idx == SYSERR) {
         return (pd_t*) SYSERR;
@@ -28,8 +29,8 @@ pd_t *newpd(void) {
 
     // Treat it as an array of 1024 entries
     for (fi = 0; fi < NENTRIES; fi++) {
-        pdptr[fi].pd_pres   = 1; // Page present by default
-        pdptr[fi].pd_write  = 1; // Writable
+        pdptr[fi].pd_pres   = 0; // Page present by default
+        pdptr[fi].pd_write  = 0; // Writable
         pdptr[fi].pd_user   = 0; // No protection in this lab
         pdptr[fi].pd_pwt    = 0; // Don't write through
         pdptr[fi].pd_pcd    = 0; // Cache definitely
@@ -38,7 +39,7 @@ pd_t *newpd(void) {
         pdptr[fi].pd_fmb    = 0; // Pages are 4KB
         pdptr[fi].pd_global = 0; // What is this?
         pdptr[fi].pd_avail  = 0; // For custom use
-        pdptr[fi].pd_base   = -1; // Dummy
+        pdptr[fi].pd_base   = 0; // Dummy
     }
 
     // Return initialized page

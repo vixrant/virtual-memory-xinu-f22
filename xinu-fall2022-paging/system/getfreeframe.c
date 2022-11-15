@@ -32,6 +32,7 @@ int16 getfreeframe(region r) {
     // Find first free frame in this region
     for( ; idx < lim ; idx++) {
         if(invpt[idx].fr_state == FR_FREE) {
+            pdf("idx: %x \n", idx);
             return idx;
         }
     }

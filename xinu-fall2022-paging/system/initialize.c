@@ -14,7 +14,7 @@ extern	void main(void);	/* Main is the first process created	*/
 extern	void xdone(void);	/* System "shutdown" procedure		*/
 static	void sysinit(); 	/* Internal system initialization	*/
 extern	void meminit(void);	/* Initializes the free memory list	*/
-extern	int16 paginginit(pd_t *);	/* Initializes the page tables	*/
+extern	int16 paginginit();	/* Initializes the page tables	*/
 
 /* Declarations of major kernel variables */
 
@@ -150,13 +150,8 @@ static	void	sysinit()
 	prptr->prstkbase = getstk(NULLSTK);
 	prptr->prstklen = NULLSTK;
 	prptr->prstkptr = 0;
-	prptr->prpd = newpd();
 	currpid = NULLPROC;
 
-	/* Initialize pagin */
-
-	paginginit(prptr->prpd);
-	
 	/* Initialize semaphores */
 
 	for (i = 0; i < NSEM; i++) {
@@ -178,14 +173,18 @@ static	void	sysinit()
 
 	clkinit();
 
-	/* pdf("Setting up devices \n"); */
-	/* for (i = 0; i < NDEVS; i++) { */
-	/* 	init(i); */
-	/* } */
-	/* pdf("Devices set-up \n"); */
+	pdf("Setting up devices \n");
+	for (i = 0; i < NDEVS; i++) {
+		init(i);
+	}
+	pdf("Devices set-up \n");
 
 		PAGE_SERVER_STATUS = PAGE_SERVER_INACTIVE;
 		bs_init_sem = semcreate(1);
+
+	/* Initialize paging */
+
+	paginginit();
 
 	return;
 }

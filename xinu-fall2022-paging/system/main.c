@@ -8,7 +8,7 @@ process	main(void)
 
 	/* Start the network */
 	/* DO NOT REMOVE OR COMMENT THIS CALL */
-	/* netstart(); */
+	netstart();
 
 	// Insert test code below
 
