@@ -100,10 +100,10 @@ typedef struct {
 /* Prototypes required for paging */
 
 /* in file newpd.c */
-extern pd_t *newpd(void);
+extern pd_t *newpd(pid32);
 
 /* in file newpt.c */
-extern pt_t *newpt(void);
+extern pt_t *newpt(pid32);
 
 /* in file getfreeframe.c */
 extern int16 getfreeframe(region);

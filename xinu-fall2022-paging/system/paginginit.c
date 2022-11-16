@@ -8,7 +8,7 @@ static inline int16 __identity_pt_init(void) {
 
     for(i = 0; i < 5; i++) {
         // Create an newpt
-        if((ptptr = newpt()) == (pt_t*) SYSERR) {
+        if((ptptr = newpt(NULLPROC)) == (pt_t*) SYSERR) {
             return SYSERR;
         }
 
@@ -46,7 +46,7 @@ int16 paginginit() {
     }
 
     // 3. Set up null process's page directory
-    prptr->prpd = newpd();
+    prptr->prpd = newpd(NULLPROC);
 
     // 4. Set-up CR3 with null process's page directory
     pdf("paginginit - set CR3 \n");

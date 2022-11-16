@@ -8,5 +8,6 @@
  */
 void	userret(void)
 {
+	pdf("userret - pid %d \n", getpid());
 	kill(getpid());			/* Force process to exit */
 }

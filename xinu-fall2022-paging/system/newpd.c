@@ -6,8 +6,8 @@
  *  newpd  -  Create a new Page Directory in Region D, returning pointer
  *------------------------------------------------------------------------
  */
-pd_t *newpd(void) {
-    int16 frame_idx; /* Index of frame in inverted page table */
+pd_t *newpd(pid32 pid) {
+    int16 frame_num; /* Index of frame in inverted page table */
     frame_t *frptr; /* Pointer to frame in inverted page table */
     pd_t *pdptr; /* Memory location */
     uint16 i; /* Initialization loop iterator */
@@ -20,19 +20,19 @@ pd_t *newpd(void) {
     }
 
     // Get a free frame
-    pdf("newpd - Finding frame \n");
-    frame_idx = getfreeframe(REGION_D);
-    if(frame_idx == SYSERR) {
+    frame_num = getfreeframe(REGION_D);
+    pdf("newpd %d - getfreeframe returned %d \n", frame_num, pid);
+    if(frame_num == SYSERR) {
         return (pd_t*) SYSERR;
     }
 
     // Occupy it
-    frptr = &invpt[frame_idx];
+    frptr = &invpt[frame_num];
     frptr->fr_state = FR_USEDD;
-    frptr->fr_pid = currpid;
+    frptr->fr_pid = pid;
 
     // Initialize page directory
-    pdptr = (pd_t*) ((FRAME0 + frame_idx) * NBPG);
+    pdptr = (pd_t*) ((FRAME0 + frame_num) * NBPG);
     memset(pdptr, 0, NBPG);
 
     // Add shared page tables
