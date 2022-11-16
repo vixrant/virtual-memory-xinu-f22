@@ -13,12 +13,15 @@ pgfdisp:
         movb    $EOI,%al    # Reset interrupt
         outb    %al,$OCW1_2
 
+        // Copy errorneous address
         movl    %cr2, %ebx
-        pushl   %ebx // Push CR2
-        pushl   36(%esp) // Push Error Code
+        movl    %ebx, pgfaddr
+        // Copy error code
+        movl    32(%esp), %ebx
+        movl    %ebx, pgferr
+
+        // Bottom function
         call    pgfhandler  # Call high level handler
-        popl    %ebx
-        popl    %ebx
 
         sti             # Restore interrupt status
         popal           # Restore registers

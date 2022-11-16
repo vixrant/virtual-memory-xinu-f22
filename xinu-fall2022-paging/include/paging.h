@@ -62,7 +62,7 @@ typedef struct {
 
 /* Region VF */
 
-#define FRAME0_VF 2024
+#define FRAME0_VF 4096
 
 #define MAXHSIZE 1024
 
@@ -87,6 +87,8 @@ extern frame_t invpt[NFRAMES];  /* inverted page table
 /* Identity maps for regions A, B, C, D, E1, E2, G */
 extern pt_t *identity_pt[5];
 
+/* Prototypes required for page faults */
+
 /* Page fault error code */
 typedef struct {
   unsigned int pgf_pres  : 1;    /* error caused by page absence or protection level violation */
@@ -101,6 +103,10 @@ typedef struct {
   unsigned int pgf_sgx   : 1;    /* error caused by SGX */
   unsigned int pgf_av2   : 16;   /* reserved bits */
 } pgf_t;
+
+extern pgf_t pgferr; /* Error code */
+extern uint32 pgfaddr; /* Faulty address */
+
 
 /* Prototypes required for paging */
 
@@ -123,7 +129,7 @@ extern intmask pagingenable(void);
 extern void pgfdisp(void);
 
 /* in file pgfhandler.c */
-extern interrupt pgfhandler(pgf_t, uint32);
+extern void pgfhandler(void);
 
 /* in file vmhgetmem.c */
 extern char *vmhgetmem(uint16);

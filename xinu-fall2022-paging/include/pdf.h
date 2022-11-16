@@ -4,21 +4,19 @@
 #define DEBUG_MEM 1
 
 #if XINUDEBUG
-
 #define pdf(...) kprintf(__VA_ARGS__)
+#else
+#define pdf(...) ;
+#endif
 
 #if DEBUG_PG
-#define pdfpg(...) kprintf(__VA_ARGS__)
+#define pdfpg(...) pdf(__VA_ARGS__)
 #else
 #define pdfpg(...) ;
 #endif
 
 #if DEBUG_MEM
-#define pdfmem(...) kprintf(__VA_ARGS__)
+#define pdfmem(...) pdf(__VA_ARGS__)
 #else
 #define pdfmem(...) ;
-#endif
-
-#else
-    #define pdf(...) ;
 #endif

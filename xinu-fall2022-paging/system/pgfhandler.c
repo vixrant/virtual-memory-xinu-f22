@@ -2,55 +2,23 @@
 
 #include <xinu.h>
 
+pgf_t pgferr; /* Error code */
+uint32 pgfaddr; /* Faulty address */
+
 /*------------------------------------------------------------------------
  * pgfhandler - high level page fault interrupt handler
  *------------------------------------------------------------------------
  */
-interrupt pgfhandler(pgf_t err, uint32 addr) {
+void pgfhandler(void) {
     pdf("----- PAGE FAULT ----- \n");
-    pdf("Errorneous address: %x \n", addr);
+    pdf("Errorneous address: %x \n", pgfaddr);
 
-    if(err.pgf_pres) {
-        pdf("Present! \n");
-    } else {
-        pdf("Absent! \n");
+    uint32 pnum = pgfaddr / NBPG;
+    pdf("Page number: %x \n", pnum);
+
+    if(pgferr.pgf_pres) {
+        pdf("Page as absent, allocate a frame \n");
     }
 
-    if(err.pgf_write) {
-        pdf("Write! \n");
-    } else {
-        pdf("Read! \n");
-    }
-
-    if(err.pgf_user) {
-        pdf("User mode! \n");
-    } else {
-        pdf("Kernel mode! \n");
-    }
-
-    if(err.pgf_rsvd) {
-        pdf("Reserved bit violation! \n");
-    }
-
-    if(err.pgf_isd) {
-        pdf("Instruction fetch! \n");
-    }
-
-    if(err.pgf_pk) {
-        pdf("Protection key violation! \n");
-    }
-
-    if(err.pgf_ss) {
-        pdf("Shadow stack access! \n");
-    }
-
-    if(err.pgf_hlat) {
-        pdf("HLAT paging! \n");
-    }
-
-    if(err.pgf_sgx) {
-        pdf("SGX! \n");
-    }
-
-	panic("Page fault processing complete...\n");
+    panic("Page fault processing complete...\n");
 }
