@@ -13,7 +13,7 @@ pt_t *newpt(pid32 pid) {
 
     // Get a free frame
     frame_num = getfreeframe(REGION_D);
-    pdf("newpt %d - getfreeframe returned %d \n", frame_num, pid);
+    pdfpg("newpt %d - getfreeframe returned %d \n", frame_num, pid);
     if(frame_num == SYSERR) {
         return (pt_t*) SYSERR;
     }

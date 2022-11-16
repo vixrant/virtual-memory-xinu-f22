@@ -26,10 +26,8 @@ syscall	kill(
 	}
 
 	// Remove pid's frames from inverted page table
-	pdf("kill %d - crawling frames \n", pid);
 	for(i=0; i<NFRAMES; i++) {
 		if(invpt[i].fr_pid == pid) {
-			pdf("kill %d - reclaim frame number %d \n", pid, i);
 			invpt[i].fr_state = FR_FREE;
 		}
 	}

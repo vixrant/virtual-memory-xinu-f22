@@ -62,7 +62,12 @@ typedef struct {
 
 /* Region VF */
 
+#define FRAME0_VF 2024
+
 #define MAXHSIZE 1024
+
+#define MINVHEAP (FRAME0_VF * NBPG)
+#define MAXVHEAP ((FRAME0_VF + MAXHSIZE) * NBPG - 1)
 
 /* Structure for an inverted page table entry */
 

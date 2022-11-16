@@ -3,14 +3,6 @@
 #define XINUDEBUG 1
 #define XINUTEST 1
 
-#if XINUDEBUG
-#define dbg(x) x
-#define pdf(...) kprintf(__VA_ARGS__)
-#else
-#define dbg(x) ;
-#define pdf(...) ;
-#endif
-
 /* Maximum number of processes in the system */
 
 #ifndef NPROC
@@ -64,7 +56,8 @@ struct procent {		/* Entry in the process table		*/
 	bool8	prhasmsg;	/* Nonzero iff msg is valid		*/
 	int16	prdesc[NDESC];	/* Device descriptors for process	*/
 
-	pd_t    *prpd;      /* Page directory */
+	pd_t          *prpd;     /* Page directory */
+	struct memblk prmemblk;  /* Free list */
 };
 
 /* Marker for the top of a process stack (used to help detect overflow)	*/

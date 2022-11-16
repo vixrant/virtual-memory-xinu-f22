@@ -2,37 +2,39 @@
 
 #include <xinu.h>
 
-/*------------------------------------------------------------------------
+/*---------------------------------------------------------------------------
  *  vmhfreemem  -  Free a memory block, returning the block to the free list
- *------------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 syscall     vmhfreemem(
       char      *blkaddr,   /* Pointer to memory block  */
-      uint16    nbytes      /* Size of block in bytes   */
+      uint16    msize       /* Size of block in pages */
     )
 {
     intmask     mask;           /* Saved interrupt mask         */
     struct  memblk  *next, *prev, *block;
+    struct  procent *prptr = &proctab[currpid];
     uint32  top;
+    uint32 nbytes = msize * NBPG; // Granularity change
 
     mask = disable();
-    if ((nbytes == 0) || ((uint32) blkaddr < (uint32) minheap)
-              || ((uint32) blkaddr > (uint32) maxheap)) {
+    if ((nbytes == 0) || ((uint32) blkaddr < MINVHEAP)
+              || ((uint32) blkaddr > MAXVHEAP)) {
         restore(mask);
+        pdfmem("vmhfreemem - Out of bounds?? \n");
         return SYSERR;
     }
 
-    nbytes = (uint32) roundmb(nbytes);  /* Use memblk multiples     */
     block = (struct memblk *)blkaddr;
 
-    prev = &memlist;            /* Walk along free list     */
-    next = memlist.mnext;
+    prev = &prptr->prmemblk;         /* Walk along free list     */
+    next = prev->mnext;
     while ((next != NULL) && (next < block)) {
         prev = next;
         next = next->mnext;
     }
 
-    if (prev == &memlist) {         /* Compute top of previous block*/
+    if (prev == &prptr->prmemblk) {         /* Compute top of previous block*/
         top = (uint32) NULL;
     } else {
         top = (uint32) prev + prev->mlength;
@@ -40,13 +42,14 @@ syscall     vmhfreemem(
 
     /* Ensure new block does not overlap previous or next blocks    */
 
-    if (((prev != &memlist) && (uint32) block < top)
+    if (((prev != &prptr->prmemblk) && (uint32) block < top)
         || ((next != NULL)  && (uint32) block+nbytes>(uint32)next)) {
         restore(mask);
+        pdfmem("vmhfreemem - overlaps previous or next blocks?? \n");
         return SYSERR;
     }
 
-    memlist.mlength += nbytes;
+    prptr->prmemblk.mlength += nbytes;
 
     /* Either coalesce with previous block or add to free list */
 
