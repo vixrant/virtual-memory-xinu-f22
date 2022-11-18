@@ -10,8 +10,6 @@
 pgfdisp:
         pushal          # Save registers
         cli             # Disable further interrupts
-        movb    $EOI,%al    # Reset interrupt
-        outb    %al,$OCW1_2
 
         // Copy errorneous address
         movl    %cr2, %ebx
@@ -25,4 +23,5 @@ pgfdisp:
 
         sti             # Restore interrupt status
         popal           # Restore registers
+        addl    $4, %esp # Discard error code
         iret            # Return from interrupt

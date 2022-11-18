@@ -53,14 +53,9 @@ pid32	create(
 	prptr->prparent = (pid32)getpid();
 	prptr->prhasmsg = FALSE;
 	prptr->prpd = newpd(pid);
-
-	/* Initialize process free list */
-	struct memblk *memptr = &prptr->prmemblk; // Header contains information
-	memptr->mlength = MAXHSIZE * NBPG;
-	memptr->mnext = (struct memblk*) MINVHEAP;
-	memptr = memptr->mnext; // First block is entire free space
-	memptr->mlength = MAXHSIZE * NBPG;
-	memptr->mnext = NULL;
+	prptr->prmeminit = FALSE;
+	for (i=0 ; i<MAXHSIZE; i++)
+		prptr->pralloc[i] = 0;
 
 	/* Set up stdin, stdout, and stderr descriptors for the shell	*/
 	prptr->prdesc[0] = CONSOLE;

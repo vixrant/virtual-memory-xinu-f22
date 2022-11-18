@@ -7,8 +7,7 @@
  *------------------------------------------------------------------------
  */
 pt_t *newpt(pid32 pid) {
-    int16 frame_num; /* Index of frame in inverted page table */
-    frame_t *frptr; /* Pointer to frame in inverted page table */
+    fidx16 frame_num; /* Index of frame in inverted page table */
     pt_t *ptptr; /* Memory location */
 
     // Get a free frame
@@ -19,9 +18,9 @@ pt_t *newpt(pid32 pid) {
     }
 
     // Occupy it
-    frptr = &invpt[frame_num];
-    frptr->fr_state = FR_USEDT;
-    frptr->fr_pid = pid;
+    if(allocaframe(frame_num, pid) == SYSERR) {
+        return (pt_t*) SYSERR;
+    }
 
     // Initialize page table
     ptptr = (pt_t*) ((FRAME0 + frame_num) * NBPG);

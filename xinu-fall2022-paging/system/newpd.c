@@ -7,12 +7,13 @@
  *------------------------------------------------------------------------
  */
 pd_t *newpd(pid32 pid) {
-    int16 frame_num; /* Index of frame in inverted page table */
-    frame_t *frptr; /* Pointer to frame in inverted page table */
+    fidx16 frame_num; /* Index of frame in inverted page table */
     pd_t *pdptr; /* Memory location */
     uint16 i; /* Initialization loop iterator */
 
-    // Creating new page directory without initializing shared page tables
+    // Creating new page directory
+    // without initializing shared page tables
+    // ss a system error
     for(i = 0; i < 5; i++) {
         if(identity_pt[i] == 0) {
             return (pd_t*) SYSERR;
@@ -27,9 +28,9 @@ pd_t *newpd(pid32 pid) {
     }
 
     // Occupy it
-    frptr = &invpt[frame_num];
-    frptr->fr_state = FR_USEDD;
-    frptr->fr_pid = pid;
+    if(allocaframe(frame_num, pid) == SYSERR) {
+        return (pd_t*) SYSERR;
+    }
 
     // Initialize page directory
     pdptr = (pd_t*) ((FRAME0 + frame_num) * NBPG);
@@ -40,12 +41,12 @@ pd_t *newpd(pid32 pid) {
         // Regions A - E2
         for(i = 0; i < 4; i++) {
             pdptr[i].pd_pres = 1;
-            pdptr[i].pd_base = ((unsigned int) identity_pt[i]) / NBPG;
+            pdptr[i].pd_base = ((uint32) identity_pt[i]) / NBPG;
         }
 
         // Add shared page tables: Region G
         pdptr[REGION_G_PD].pd_pres = 1;
-        pdptr[REGION_G_PD].pd_base = ((unsigned int) identity_pt[4]) / NBPG;
+        pdptr[REGION_G_PD].pd_base = ((uint32) identity_pt[4]) / NBPG;
     }
 
     // Return initialized page

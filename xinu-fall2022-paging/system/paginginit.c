@@ -42,7 +42,7 @@ int16 paginginit() {
 
     // 2. Set up shared page tables
     if(__identity_pt_init() == SYSERR) {
-        return SYSERR;
+        panic("Could not set up shared page tables \n");
     }
 
     // 3. Set up null process's page directory
@@ -53,11 +53,12 @@ int16 paginginit() {
     pdsw(prptr->prpd);
 
     // 5. Set page fault handler
-	set_evec(14, (uint32) pgfdisp);
+    set_evec(14, (uint32) pgfdisp);
 
     // 6. Enable paging
     pdfpg("paginginit - enabled paging \n");
-    pagingenable();
+    uint32 cr0 = pagingenable();
+    kprintf("cr0 = %x \n", cr0);
 
     return OK;
 }

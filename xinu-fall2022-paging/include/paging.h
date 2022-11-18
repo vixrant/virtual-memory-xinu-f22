@@ -58,16 +58,28 @@ typedef struct {
 #define NFRAMES_E1 1024
 #define NFRAMES_E2 1048
 
+#define FRAME0_D  (FRAME0)
+#define FRAME0_E1 (FRAME0 + NFRAMES_D)
+#define FRAME0_E2 (FRAME0 + NFRAMES_D + NFRAMES_E1)
+#define FRAME0_F  (FRAME0 + NFRAMES_D + NFRAMES_E1 + NFRAMES_E2)
+
 #define REGION_G_PD 576
 
 /* Region VF */
 
-#define FRAME0_VF 4096
+#define FRAME0_VF FRAME0_F
 
 #define MAXHSIZE 1024
 
 #define MINVHEAP (FRAME0_VF * NBPG)
 #define MAXVHEAP ((FRAME0_VF + MAXHSIZE) * NBPG - 1)
+
+/* Macro expressions */
+
+#define VHNUM(x) (x >> 12) - FRAME0_VF
+#define PGNUM(x) (x >> 12)
+#define PDIDX(x) (x >> 22)
+#define PTIDX(x) (x >> 12) & 1023
 
 /* Structure for an inverted page table entry */
 
@@ -75,6 +87,8 @@ typedef struct {
 #define FR_USEDD 1 /* frame is used for directory */
 #define FR_USEDT 2 /* frame is used for table */
 #define FR_USEDH 3 /* frame is used for heap */
+
+#define fidx16 int16
 
 typedef struct {
   pid32        fr_pid;          /* owner of frame */
@@ -117,7 +131,10 @@ extern pd_t *newpd(pid32);
 extern pt_t *newpt(pid32);
 
 /* in file getfreeframe.c */
-extern int16 getfreeframe(region);
+extern fidx16 getfreeframe(region);
+
+/* in file allocaframe */
+extern syscall allocaframe(fidx16, pid32);
 
 /* in file pdsw.S */
 extern void pdsw(pd_t*);
@@ -125,11 +142,18 @@ extern void pdsw(pd_t*);
 /* in file pagingenable.S */
 extern intmask pagingenable(void);
 
+/* in file pagingidx.c */
+extern pd_t *getpde(char* addr);
+extern pt_t *getpte(char* addr);
+
 /* in file pgfdisp.S */
 extern void pgfdisp(void);
 
 /* in file pgfhandler.c */
 extern void pgfhandler(void);
+
+/* in file vmhinit.c */
+extern void vmhinit(void);
 
 /* in file vmhgetmem.c */
 extern char *vmhgetmem(uint16);

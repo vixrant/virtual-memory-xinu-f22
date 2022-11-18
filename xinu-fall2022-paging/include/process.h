@@ -57,7 +57,9 @@ struct procent {		/* Entry in the process table		*/
 	int16	prdesc[NDESC];	/* Device descriptors for process	*/
 
 	pd_t          *prpd;     /* Page directory */
+	bool8         prmeminit; /* Virtual heap initialized? */
 	struct memblk prmemblk;  /* Free list */
+	bool8         pralloc[MAXHSIZE]; /* Boolean set of page ownership */
 };
 
 /* Marker for the top of a process stack (used to help detect overflow)	*/

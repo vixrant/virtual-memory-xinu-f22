@@ -17,11 +17,13 @@ syscall     vmhfreemem(
     uint32  top;
     uint32 nbytes = msize * NBPG; // Granularity change
 
+    vmhinit(); // Initialize vheap if not done already
+
     mask = disable();
     if ((nbytes == 0) || ((uint32) blkaddr < MINVHEAP)
               || ((uint32) blkaddr > MAXVHEAP)) {
         restore(mask);
-        pdfmem("vmhfreemem - Out of bounds?? \n");
+        log_mem("vmhfreemem - Out of bounds?? \n");
         return SYSERR;
     }
 
@@ -45,7 +47,7 @@ syscall     vmhfreemem(
     if (((prev != &prptr->prmemblk) && (uint32) block < top)
         || ((next != NULL)  && (uint32) block+nbytes>(uint32)next)) {
         restore(mask);
-        pdfmem("vmhfreemem - overlaps previous or next blocks?? \n");
+        log_mem("vmhfreemem - overlaps previous or next blocks?? \n");
         return SYSERR;
     }
 

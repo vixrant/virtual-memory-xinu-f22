@@ -14,7 +14,7 @@ extern	void main(void);	/* Main is the first process created	*/
 extern	void xdone(void);	/* System "shutdown" procedure		*/
 static	void sysinit(); 	/* Internal system initialization	*/
 extern	void meminit(void);	/* Initializes the free memory list	*/
-extern	int16 paginginit();	/* Initializes the page tables	*/
+extern	void paginginit();	/* Initializes the page tables	*/
 
 /* Declarations of major kernel variables */
 
@@ -53,6 +53,8 @@ void	nulluser()
 	/* Initialize the system */
 		
 	sysinit();
+	kprintf("Enabling paging \n");
+	paginginit();
 
 	kprintf("\n\r%s\n\n\r", VERSION);
 	
@@ -181,8 +183,6 @@ static	void	sysinit()
 		bs_init_sem = semcreate(1);
 
 	/* Initialize paging */
-
-	paginginit();
 
 	return;
 }
