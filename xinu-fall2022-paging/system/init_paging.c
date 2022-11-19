@@ -31,7 +31,7 @@ static inline int16 __identity_pt_init(void) {
     return OK;
 }
 
-int16 paginginit() {
+void init_paging(void) {
     struct procent *prptr = &proctab[NULLPROC];
     uint16 i; /* Initialization loop iterator */
 
@@ -59,6 +59,4 @@ int16 paginginit() {
     log_init("paginginit - enabled paging \n");
     uint32 cr0 = pagingenable();
     log_init("cr0 = %x \n", cr0);
-
-    return OK;
 }

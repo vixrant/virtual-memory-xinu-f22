@@ -7,22 +7,36 @@
 void debugpagetable(uint32 addr) {
 	uint32 i;
 	pd_t *pd = proctab[currpid].prpd;
+	pt_t *pt = NULL;
 
 	pdf("--- DEBUGGING PAGE TABLES --- \n");
-	pdf("Address: 0x%x \n", addr);
-	pdf("Page Directory Index: 0x%x \n", PDIDX(addr));
-	pdf("Page Table Index: 0x%x \n", PTIDX(addr));
-	pdf("PDE: 0x%x \n", *getpde(addr));
-	pdf("PTE: 0x%x \n", *getpte(addr));
-	pdf("Frame: 0x%x \n", getframenum(addr));
+	pdf("Address: 0x%08x \n", addr);
+	pdf("Page Directory Index: %d \n", PDIDX(addr));
+	pdf("Page Table Index: %d \n", PTIDX(addr));
+	pdf("PDE: 0x%08x \n", *getpde(addr));
+	pdf("PTE: 0x%08x \n", *getpte(addr));
+	pdf("Frame: %d \n", getframenum(addr));
 	pdf("Page directory crawl: \n");
 	for(i=0 ; i<NENTRIES ; i++) {
 		if(pd[i].pd_pres) {
-			pdf("PDE %i present : 0x%x \n", pd[i]);
+			pdf("PDE %d present : 0x%08x \n", i, pd[i]);
 		}
 
-		if(i == PDIDX(addr) && pd[i].pd_pres == 0) {
-			pdf("PDE for addr absent \n");
+		if(i == PDIDX(addr)) {
+			if(pd[i].pd_pres == 0) {
+				pdf("PDE for addr absent \n");
+			} else {
+				pdf("PDE for addr present \n");
+				pt = (pd[i].pd_base << 12);
+			}
+		}
+	}
+
+	if(pt) {
+		for(i=0 ; i<NENTRIES ; i++) {
+			if(pt[i].pt_pres) {
+				pdf("PTE %d present : 0x%08x \n", i, pt[i]);
+			}
 		}
 	}
 	pdf("----------------------------- \n");
@@ -60,17 +74,17 @@ process	main(void)
 	/* int *x, *y; */
 
 	/* y = x = (int*) vmhgetmem(1); */
-	/* pdf("Got memory 0x%x after requesting 1 \n", x); */
+	/* pdf("Got memory 0x%08x after requesting 1 \n", x); */
 
 	/* x = (int*) vmhgetmem(1023); */
-	/* pdf("Got memory 0x%x after requesting 1023 \n", x); */
+	/* pdf("Got memory 0x%08x after requesting 1023 \n", x); */
 
 	/* x = (int*) vmhgetmem(1); */
 	/* pdf("Got %d on requesting more than 1024 pages \n", x); */
 
 	/* vmhfreemem((char*) y, 1); */
 	/* x = (int*) vmhgetmem(1); */
-	/* pdf("Got memory %x after freeing %x \n", x, y); */
+	/* pdf("Got memory %08x after freeing %08x \n", x, y); */
 
 	testgetmem1();
 
