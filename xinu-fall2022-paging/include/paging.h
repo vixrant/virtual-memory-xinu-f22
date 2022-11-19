@@ -143,8 +143,9 @@ extern void pdsw(pd_t*);
 extern intmask pagingenable(void);
 
 /* in file pagingidx.c */
-extern pd_t *getpde(char* addr);
-extern pt_t *getpte(char* addr);
+extern pd_t *getpde(char*);
+extern pt_t *getpte(char*);
+extern fidx16 getframenum(char*);
 
 /* in file pgfdisp.S */
 extern void pgfdisp(void);

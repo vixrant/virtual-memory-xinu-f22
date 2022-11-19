@@ -7,7 +7,7 @@
  *------------------------------------------------------------------------
  */
 pd_t *newpd(pid32 pid) {
-    fidx16 frame_num; /* Index of frame in inverted page table */
+    fidx16 frame_idx; /* Index of frame in inverted page table */
     pd_t *pdptr; /* Memory location */
     uint16 i; /* Initialization loop iterator */
 
@@ -21,19 +21,19 @@ pd_t *newpd(pid32 pid) {
     }
 
     // Get a free frame
-    frame_num = getfreeframe(REGION_D);
-    pdfpg("newpd %d - getfreeframe returned %d \n", frame_num, pid);
-    if(frame_num == SYSERR) {
+    frame_idx = getfreeframe(REGION_D);
+    log_init("newpd %d - getfreeframe returned %d \n", frame_idx, pid);
+    if(frame_idx == SYSERR) {
         return (pd_t*) SYSERR;
     }
 
     // Occupy it
-    if(allocaframe(frame_num, pid) == SYSERR) {
+    if(allocaframe(frame_idx, pid) == SYSERR) {
         return (pd_t*) SYSERR;
     }
 
     // Initialize page directory
-    pdptr = (pd_t*) ((FRAME0 + frame_num) * NBPG);
+    pdptr = (pd_t*) ((FRAME0 + frame_idx) * NBPG);
     memset(pdptr, 0, NBPG);
 
     // Add shared page tables

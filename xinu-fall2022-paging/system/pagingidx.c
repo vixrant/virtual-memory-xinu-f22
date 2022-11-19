@@ -14,3 +14,9 @@ pt_t *getpte(char* addr) {
     pt_t *pte = &ptptr[PTIDX((uint32) addr)];
     return pte;
 }
+
+fidx16 getframenum(char* addr) {
+    pt_t *pte = getpte(addr);
+    fidx16 frame_num = pte->pt_base;
+    return frame_num;
+}

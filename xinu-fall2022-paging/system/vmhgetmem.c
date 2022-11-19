@@ -2,12 +2,14 @@
 
 #include <xinu.h>
 
-static inline void __set_pages_allocated(uint16 msize, struct memblk *start) {
+static inline void __set_pages_allocated(uint16 msize, struct memblk *blkaddr) {
     struct  procent *prptr = &proctab[currpid];
-    uint16 off = VHNUM((uint32) start);
-    uint16 i;
+    uint32 i;
+
     for(i=0 ; i<msize ; i++) {
-        prptr->pralloc[off + i] = TRUE;
+        uint32 addr = ((uint32) blkaddr) + (i * NBPG);
+        // Set allocated in process cell
+        prptr->pralloc[VHNUM(addr)] = TRUE;
     }
 }
 
@@ -39,16 +41,18 @@ char *vmhgetmem(
         if (curr->mlength == nbytes) {  /* Block is exact match     */
             prev->mnext = curr->mnext;
             prptr->prmemblk.mlength -= nbytes;
+            __set_pages_allocated(msize, curr);
             restore(mask);
             return (char *)(curr);
 
         } else if (curr->mlength > nbytes) { /* Split big block     */
             leftover = (struct memblk *)((uint32) curr + nbytes);
-            __set_pages_allocated(msize, leftover);
+            prptr->pralloc[VHNUM((uint32) leftover)] = TRUE;
             prev->mnext = leftover;
             leftover->mnext = curr->mnext;
             leftover->mlength = curr->mlength - nbytes;
             prptr->prmemblk.mlength -= nbytes;
+            __set_pages_allocated(msize, curr);
             restore(mask);
             return (char *)(curr);
         } else {            /* Move to next block   */

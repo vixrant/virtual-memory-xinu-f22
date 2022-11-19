@@ -53,8 +53,6 @@ void	nulluser()
 	/* Initialize the system */
 		
 	sysinit();
-	kprintf("Enabling paging \n");
-	paginginit();
 
 	kprintf("\n\r%s\n\n\r", VERSION);
 	
@@ -183,6 +181,8 @@ static	void	sysinit()
 		bs_init_sem = semcreate(1);
 
 	/* Initialize paging */
+
+	paginginit();
 
 	return;
 }

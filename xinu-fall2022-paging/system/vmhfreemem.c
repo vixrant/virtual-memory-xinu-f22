@@ -2,6 +2,30 @@
 
 #include <xinu.h>
 
+static inline void __set_pages_deallocated(uint16 msize, char *blkaddr) {
+    struct procent *prptr = &proctab[currpid];
+    uint32 i;
+
+    for(i=0 ; i<msize ; i++) {
+        uint32 addr = ((uint32) blkaddr) + (i * NBPG);
+        // Set unallocated in process cell
+        prptr->pralloc[VHNUM(addr)] = FALSE;
+        // Get PTE
+        pt_t *pte = getpte((char*) addr);
+        // If present
+        if(pte->pt_pres == 1) {
+            // Mark as absent
+            pte->pt_pres = 0;
+            // Get frame mapping
+            fidx16 frame_idx = pte->pt_base - FRAME0;
+            // Mark the frame as absent in inverted page table
+            if(invpt[frame_idx].fr_pid == currpid) {
+                invpt[frame_idx].fr_state = FR_FREE;
+            }
+        }
+    }
+}
+
 /*---------------------------------------------------------------------------
  *  vmhfreemem  -  Free a memory block, returning the block to the free list
  *---------------------------------------------------------------------------
@@ -70,6 +94,10 @@ syscall     vmhfreemem(
         block->mlength += next->mlength;
         block->mnext = next->mnext;
     }
+
+    // Update kernel data structures
+    __set_pages_deallocated(msize, blkaddr);
+
     restore(mask);
     return OK;
 }

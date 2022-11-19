@@ -1,13 +1,13 @@
 /* pdf.h */
 
 #if XINUDEBUG
-#define DEBUG_PG 0
+#define DEBUG_INI 0
 #define DEBUG_MEM 1
-#define BEFUG_PGF 0
+#define DEBUG_PGF 1
 #else
-#define DEBUG_PG 0
+#define DEBUG_INI 0
 #define DEBUG_MEM 0
-#define BEFUG_PGF 0
+#define DEBUG_PGF 0
 #endif
 
 #if XINUDEBUG
@@ -16,10 +16,10 @@
 #define pdf(...) ;
 #endif
 
-#if DEBUG_PG
-#define pdfpg(...) pdf(__VA_ARGS__)
+#if DEBUG_INI
+#define log_init(...) pdf(__VA_ARGS__)
 #else
-#define pdfpg(...) ;
+#define log_init(...) ;
 #endif
 
 #if DEBUG_MEM

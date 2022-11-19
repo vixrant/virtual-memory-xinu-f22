@@ -49,16 +49,16 @@ int16 paginginit() {
     prptr->prpd = newpd(NULLPROC);
 
     // 4. Set-up CR3 with null process's page directory
-    pdfpg("paginginit - set CR3 \n");
+    log_init("paginginit - set CR3 \n");
     pdsw(prptr->prpd);
 
     // 5. Set page fault handler
     set_evec(14, (uint32) pgfdisp);
 
     // 6. Enable paging
-    pdfpg("paginginit - enabled paging \n");
+    log_init("paginginit - enabled paging \n");
     uint32 cr0 = pagingenable();
-    kprintf("cr0 = %x \n", cr0);
+    log_init("cr0 = %x \n", cr0);
 
     return OK;
 }

@@ -23,6 +23,8 @@ void pgfhandler(void) {
 
     // Check if error was caused due to page being absent
     if(pgferr.pgf_pres == 0) {
+        log_pgf("PTE was absent \n");
+
         // Check if page was not allocated in the page directory
         if(prptr->pralloc[VHNUM(pgfaddr)] == 0) {
             kprintf("Segmentation fault PID %d \n", currpid);
@@ -37,25 +39,31 @@ void pgfhandler(void) {
         pd_t *pde = getpde((char*) pgfaddr);
         // Check if PDE is absent, if yes then allocate a new one
         if(pde->pd_pres == 0) {
+            log_pgf("Page Table is absent \n");
+            pt_t *ptptr = newpt(currpid);
+            if(ptptr == (pt_t*) SYSERR) {
+                panic("Cannot find a free frame in region E1 \n");
+            }
             pde->pd_pres = 1;
             pde->pd_write = 1;
-            pde->pd_base = ((uint32) newpt(currpid) / NBPG);
+            pde->pd_base = ((uint32) ptptr / NBPG);
         }
 
         // Allocate a new frame
-        fidx16 frame_num = getfreeframe(REGION_E1);
-        if(frame_num == SYSERR) {
+        fidx16 frame_idx = getfreeframe(REGION_E1);
+        if(frame_idx == SYSERR) {
             // TODO: Block here
             panic("Cannot find a free frame in region E1 \n");
         }
-        allocaframe(frame_num, currpid);
+        allocaframe(frame_idx, currpid);
 
         // Get page table entry
         pt_t *pte = getpte((char*) pgfaddr);
+        log_pgf("Mapping %d -> %d \n", PGNUM(pgfaddr), frame_idx + FRAME0);
         // Map page to frame
         pte->pt_pres = 1;
         pte->pt_write = 1;
-        pte->pt_base = frame_num;
+        pte->pt_base = frame_idx + FRAME0;
 
         log_pgf("----- ---------- ----- \n");
         return;
