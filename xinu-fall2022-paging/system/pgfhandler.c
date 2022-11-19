@@ -13,62 +13,64 @@ void pgfhandler(void) {
     struct procent *prptr = &proctab[currpid];
 
     log_pgf("----- PAGE FAULT ----- \n");
-    log_pgf("PID: %d \n", currpid);
-    log_pgf("Error code: 0x%x \n", pgferr);
-    log_pgf("Errorneous address: 0x%x \n", pgfaddr);
-    log_pgf("Allocated: %d \n", prptr->pralloc[VHNUM(pgfaddr)]);
-    log_pgf("Page number: 0x%x \n", PGNUM(pgfaddr));
-    log_pgf("PDIDX: 0x%x \n", PDIDX(pgfaddr));
-    log_pgf("PTIDX: 0x%x \n", PTIDX(pgfaddr));
+    log_pgf("- PID: %d \n", currpid);
+    log_pgf("- Error code: 0x%x \n", pgferr);
+    log_pgf("- Errorneous address: 0x%x \n", pgfaddr);
+    log_pgf("- Allocated: %d \n", prptr->pralloc[VHNUM(pgfaddr)]);
+    log_pgf("- Page number: 0x%x \n", PGNUM(pgfaddr));
+    log_pgf("- PDIDX: 0x%x \n", PDIDX(pgfaddr));
+    log_pgf("- PTIDX: 0x%x \n", PTIDX(pgfaddr));
 
-    // Check if error was caused due to page being absent
-    if(pgferr.pgf_pres == 0) {
-        log_pgf("PTE was absent \n");
-
-        // Check if page was not allocated in the page directory
-        if(prptr->pralloc[VHNUM(pgfaddr)] == 0) {
-            kprintf("Segmentation fault PID %d \n", currpid);
-            kill(currpid);
-            return; // For completeness's sake
-        }
-
-        // Page is allocated but ont present in E1
-        // Allocate new frame in E1 and map it in PTE
-
-        // Get page directory entry
-        pd_t *pde = getpde((char*) pgfaddr);
-        // Check if PDE is absent, if yes then allocate a new one
-        if(pde->pd_pres == 0) {
-            log_pgf("Page Table is absent \n");
-            pt_t *ptptr = newpt(currpid);
-            if(ptptr == (pt_t*) SYSERR) {
-                panic("Cannot find a free frame in region E1 \n");
-            }
-            pde->pd_pres = 1;
-            pde->pd_write = 1;
-            pde->pd_base = ((uint32) ptptr / NBPG);
-        }
-
-        // Allocate a new frame
-        fidx16 frame_idx = getfreeframe(REGION_E1);
-        if(frame_idx == SYSERR) {
-            // TODO: Block here
-            panic("Cannot find a free frame in region E1 \n");
-        }
-        allocaframe(frame_idx, currpid);
-
-        // Get page table entry
-        pt_t *pte = getpte((char*) pgfaddr);
-        log_pgf("Mapping %d -> %d \n", PGNUM(pgfaddr), frame_idx + FRAME0);
-        // Map page to frame
-        pte->pt_pres = 1;
-        pte->pt_write = 1;
-        pte->pt_base = frame_idx + FRAME0;
-
+    // If error was caused due to access violation issue
+    if(pgferr.pgf_pres == 1) {
+        log_pgf("System page fault");
         log_pgf("----- ---------- ----- \n");
         return;
     }
 
-    kprintf("No approach to handle this page fault: addr 0x%x code 0x%x \n", pgfaddr, pgferr);
-    panic("Page fault handler panic \n");
+    log_pgf("- Maping was absent \n");
+
+    // Check if page was not allocated in the page directory
+    if(prptr->pralloc[VHNUM(pgfaddr)] == 0) {
+        kprintf("- Segmentation fault PID %d \n", currpid);
+        kill(currpid);
+        return; // For completeness's sake
+    }
+
+    // Page is allocated but not present in E1
+    // Allocate new frame in E1 and map it in PTE
+
+    // 1. Check if PDE is absent, if so then allocate a new one
+    pd_t *pde = getpde((char*) pgfaddr);
+    if(pde->pd_pres == 0) {
+        log_pgf("- Page Table is absent \n");
+        pt_t *ptptr = newpt(currpid);
+        if(ptptr == (pt_t*) SYSERR) {
+            panic("Cannot find a free frame in region D \n");
+        }
+        pde->pd_pres = 1;
+        pde->pd_write = 1;
+        pde->pd_base = ((uint32) ptptr / NBPG);
+    }
+    log_pgf("- PDE 0x%08x \n", *pde);
+
+    // 2. Get a new frame
+    log_pgf("- Getting a frame in E1 \n");
+    fidx16 frame_idx = getfreeframe(REGION_E1);
+    if(frame_idx == SYSERR) {
+        // TODO: Block here
+        panic("Cannot find a free frame in region E1 \n");
+    }
+    allocaframe(frame_idx, currpid);
+
+    // 3. Map page to frame
+    pt_t *pte = getpte((char*) pgfaddr);
+    log_pgf("- Mapping %d -> %d \n", PGNUM(pgfaddr), frame_idx + FRAME0);
+    pte->pt_pres = 1;
+    pte->pt_write = 1;
+    pte->pt_base = frame_idx + FRAME0;
+    log_pgf("- PTE after updating 0x%08x \n", *pte);
+
+    log_pgf("----- ---------- ----- \n");
+    return;
 }

@@ -83,20 +83,29 @@ typedef struct {
 
 /* Structure for an inverted page table entry */
 
-#define FR_FREE  0 /* frame is free */
-#define FR_USEDD 1 /* frame is used for directory */
-#define FR_USEDT 2 /* frame is used for table */
-#define FR_USEDH 3 /* frame is used for heap */
+#define FR_FREE 0 /* frame is free */
+#define FR_USED 1 /* frame is used for directory */
 
 #define fidx16 int16
 
 typedef struct {
   pid32        fr_pid;          /* owner of frame */
-  unsigned int fr_state : 2;    /* state of frame */
+  unsigned int fr_state : 1;    /* state of frame */
 } frame_t;
 
 extern frame_t invpt[NFRAMES];  /* inverted page table
                                  * for regions D, E1, E2 */
+
+/* Stack of free frames */
+
+extern fidx16 frstackD[NFRAMES_D];
+extern int16 frspD;
+
+extern fidx16 frstackE1[NFRAMES_E1];
+extern int16 frspE1;
+
+extern fidx16 frstackE2[NFRAMES_E2];
+extern int16 frspE2;
 
 /* Identity maps for regions A, B, C, D, E1, E2, G */
 extern pt_t *identity_pt[5];
@@ -130,22 +139,21 @@ extern pd_t *newpd(pid32);
 /* in file newpt.c */
 extern pt_t *newpt(pid32);
 
-/* in file getfreeframe.c */
+/* in file framemgmt.c */
 extern fidx16 getfreeframe(region);
-
-/* in file allocaframe */
 extern syscall allocaframe(fidx16, pid32);
+extern syscall deallocaframe(fidx16);
+
+/* in file pagingidx.c */
+extern pd_t *getpde(char*);
+extern pt_t *getpte(char*);
+extern fidx16 getframenum(char*);
 
 /* in file pdsw.S */
 extern void pdsw(pd_t*);
 
 /* in file pagingenable.S */
 extern intmask pagingenable(void);
-
-/* in file pagingidx.c */
-extern pd_t *getpde(char*);
-extern pt_t *getpte(char*);
-extern fidx16 getframenum(char*);
 
 /* in file pgfdisp.S */
 extern void pgfdisp(void);

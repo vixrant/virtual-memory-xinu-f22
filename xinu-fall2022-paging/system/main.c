@@ -3,6 +3,7 @@
 #include <xinu.h>
 
 //*DEBUG**********************************************************************/
+#if XINUDEBUG
 
 void debugpagetable(uint32 addr) {
 	uint32 i;
@@ -42,12 +43,34 @@ void debugpagetable(uint32 addr) {
 	pdf("----------------------------- \n");
 }
 
+#endif
+
 //*TEST***********************************************************************/
+#if XINUTEST
+
+void testframemgmt(void) {
+	uint16 i;
+
+	pdf("@ Allocating %d pages \n", NFRAMES_E1);
+	for(i=0 ; i<NFRAMES_E1; i++) {
+		pdf("@ i=%d \n", i);
+		allocaframe(getfreeframe(REGION_E1), currpid);
+	}
+
+	pdf("@ Requesting one more \n");
+	getfreeframe(REGION_E1);
+
+	pdf("@ Deallocating frame 2 \n");
+	deallocaframe(2);
+
+	pdf("@ Requesting one more \n");
+	allocaframe(getfreeframe(REGION_E1), currpid);
+}
 
 void testgetmem1(void) {
-	kprintf("@ Requesting one page \n");
+	pdf("@ Requesting one page \n");
 	char *x = vmhgetmem(1);
-	kprintf("@ Accessing all locations of this page \n");
+	pdf("@ Accessing all locations of this page \n");
 	uint32 i;
 	for(i = 0; i < NBPG; i++) {
 		if(i < 10)
@@ -55,38 +78,39 @@ void testgetmem1(void) {
 		else
 			x[i] = '\0';
 	}
-	kprintf("@ x = %s \n", x);
-	kprintf("@ Printing debug information \n ");
+	pdf("@ x = %s \n", x);
+	pdf("@ Printing debug information \n ");
 	debugpagetable(x);
 }
 
-void testframemanagement() {
+void testfreemem1(void) {
+	int *x, *y;
+
+	pdf("@ Requesting 2 pages \n");
+	y = x = (int*) vmhgetmem(2);
+	pdf("@ Got memory 0x%08x requesting 1 \n", x);
+
+	pdf("@ Requesting 1022 pages \n");
+	x = (int*) vmhgetmem(1022);
+	pdf("@ Got memory 0x%08x requesting 1022 \n", x);
+
+	pdf("@ Requesting more than 1024 page \n");
+	x = (int*) vmhgetmem(1);
+	pdf("@ Got %d \n", x);
+
+	pdf("@ Freeing memory  %08x \n", y);
+	vmhfreemem((char*) y, 2);
+
+	x = (int*) vmhgetmem(1);
+	pdf("@ Got memory %08x on requesting 1 \n", x, y);
 }
 
+#endif
 //*MAIN***********************************************************************/
 
 process	main(void)
 {
-	/* Start the network */
-	/* DO NOT REMOVE OR COMMENT THIS CALL */
-	/* netstart(); */
-
-	/* int *x, *y; */
-
-	/* y = x = (int*) vmhgetmem(1); */
-	/* pdf("Got memory 0x%08x after requesting 1 \n", x); */
-
-	/* x = (int*) vmhgetmem(1023); */
-	/* pdf("Got memory 0x%08x after requesting 1023 \n", x); */
-
-	/* x = (int*) vmhgetmem(1); */
-	/* pdf("Got %d on requesting more than 1024 pages \n", x); */
-
-	/* vmhfreemem((char*) y, 1); */
-	/* x = (int*) vmhgetmem(1); */
-	/* pdf("Got memory %08x after freeing %08x \n", x, y); */
-
-	testgetmem1();
+	testframemgmt();
 
 	return OK;
 }

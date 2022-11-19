@@ -2,19 +2,24 @@
 
 #include <xinu.h>
 
-static inline void __set_pages_allocated(uint16 msize, struct memblk *blkaddr) {
+// Set m pages all to allocated
+static inline void __set_pages_allocated(
+    uint16 msize,
+    struct memblk *blkaddr
+) {
     struct  procent *prptr = &proctab[currpid];
     uint32 i;
 
     for(i=0 ; i<msize ; i++) {
         uint32 addr = ((uint32) blkaddr) + (i * NBPG);
+        log_fr("vmhgetmem - allocating 0x%08x \n", addr);
         // Set allocated in process cell
         prptr->pralloc[VHNUM(addr)] = TRUE;
     }
 }
 
 /*------------------------------------------------------------------------
- *  vhmgetmem  -  Allocate vheap storage, returning lowest word address
+ *  vhmgetmem - Allocate vheap storage, returning lowest word address
  *------------------------------------------------------------------------
  */
 char *vmhgetmem(

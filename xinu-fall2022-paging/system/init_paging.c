@@ -1,7 +1,10 @@
-/* paginginit.c - paginginit */
+/* init_paging.c - init_paging */
 
 #include <xinu.h>
 
+// Setup 5 page tables
+// 4 of them are sequential for A - E2
+// 1 of them is at 576 for G
 static inline int16 __identity_pt_init(void) {
     uint16 i, j; /* Initialization loop iterator */
     pt_t *ptptr;
@@ -31,14 +34,28 @@ static inline int16 __identity_pt_init(void) {
     return OK;
 }
 
+/*---------------------------------------------------------------------------
+ *  init_paging - Initializes paging. Refer to each step in comments.
+ *---------------------------------------------------------------------------
+ */
 void init_paging(void) {
     struct procent *prptr = &proctab[NULLPROC];
     uint16 i; /* Initialization loop iterator */
 
-    // 1. Set all entries in inverted page table to FREE
-    for(i = 0; i < NFRAMES; i++) {
-        invpt[i].fr_state = FR_FREE;
-    }
+    // 1. Set-up frame management
+    for(i=0 ; i<NFRAMES ; i++)
+        invpt[i].fr_state = FR_FREE; // all frames free
+
+    for(i=0 ; i<NFRAMES_D  ; i++) // set up index stacks
+        frstackD[i] = i;
+
+    for(i=0 ; i<NFRAMES_E1 ; i++)
+        frstackE1[i] = NFRAMES_D + i;
+
+    for(i=0 ; i<NFRAMES_E2 ; i++)
+        frstackE2[i] = NFRAMES_D + NFRAMES_E1 + i;
+
+    frspD = frspE1 = frspE2 = 0; // stack pointers
 
     // 2. Set up shared page tables
     if(__identity_pt_init() == SYSERR) {

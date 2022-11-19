@@ -2,26 +2,35 @@
 
 #include <xinu.h>
 
-static inline void __set_pages_deallocated(uint16 msize, char *blkaddr) {
+// 1. Set m pages to unallocated
+// 2. Set the PTE for the page as absent
+// 3. Add frame back to its stack
+static inline void __set_pages_deallocated(
+    uint16 msize,
+    char *blkaddr
+) {
     struct procent *prptr = &proctab[currpid];
     uint32 i;
 
     for(i=0 ; i<msize ; i++) {
         uint32 addr = ((uint32) blkaddr) + (i * NBPG);
+        log_fr("vmhfreemem - deallocating 0x%08x \n", addr);
         // Set unallocated in process cell
         prptr->pralloc[VHNUM(addr)] = FALSE;
         // Get PTE
         pt_t *pte = getpte((char*) addr);
-        // If present
         if(pte->pt_pres == 1) {
             // Mark as absent
             pte->pt_pres = 0;
+            log_fr("vmhfreemem - marked PTE %d absent \n", *pte);
             // Get frame mapping
             fidx16 frame_idx = pte->pt_base - FRAME0;
-            // Mark the frame as absent in inverted page table
-            if(invpt[frame_idx].fr_pid == currpid) {
-                invpt[frame_idx].fr_state = FR_FREE;
+            // Mark the frame as free in inverted page table
+            // Add back to its stack
+            if(invpt[frame_idx].fr_pid != currpid) {
+                kprintf("Error in code: Deallocating frame belonging to %d that does not belong to %d \n", invpt[frame_idx].fr_pid, currpid);
             }
+            deallocaframe(frame_idx);
         }
     }
 }
