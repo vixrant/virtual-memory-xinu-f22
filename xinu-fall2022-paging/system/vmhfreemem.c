@@ -5,9 +5,10 @@
 // 1. Set m pages to unallocated
 // 2. Set the PTE for the page as absent
 // 3. Add frame back to its stack
-static inline void __set_pages_deallocated(
+static void __set_pages_deallocated(
     uint16 msize,
-    char *blkaddr
+    char *blkaddr,
+    bool8 skipfirst
 ) {
     struct procent *prptr = &proctab[currpid];
     uint32 i;
@@ -15,22 +16,28 @@ static inline void __set_pages_deallocated(
     for(i=0 ; i<msize ; i++) {
         uint32 addr = ((uint32) blkaddr) + (i * NBPG);
         log_fr("vmhfreemem - deallocating 0x%08x \n", addr);
+        if(i == 0 && skipfirst) {
+            log_fr("vmhfreemem - skipping link node \n");
+            continue;
+        }
         // Set unallocated in process cell
         prptr->pralloc[VHNUM(addr)] = FALSE;
         // Get PTE
         pt_t *pte = getpte((char*) addr);
         if(pte->pt_pres == 1) {
+            log_fr("vmhfreemem - 0x%08x maps to frame %d \n", addr, getframenum(addr));
             // Mark as absent
             pte->pt_pres = 0;
+            asm volatile("invlpg (%0)" :: "r" (addr) : "memory");
             log_fr("vmhfreemem - marked PTE %d absent \n", *pte);
             // Get frame mapping
-            fidx16 frame_idx = pte->pt_base - FRAME0;
+            fidx16 frame_num = pte->pt_base;
             // Mark the frame as free in inverted page table
             // Add back to its stack
-            if(invpt[frame_idx].fr_pid != currpid) {
-                kprintf("Error in code: Deallocating frame belonging to %d that does not belong to %d \n", invpt[frame_idx].fr_pid, currpid);
+            if(invpt[frame_num - FRAME0].fr_pid != currpid) {
+                kprintf("Error in code: Deallocating frame belonging to %d that does not belong to %d \n", invpt[frame_num - FRAME0].fr_pid, currpid);
             }
-            deallocaframe(frame_idx);
+            deallocaframe(frame_num);
         }
     }
 }
@@ -89,12 +96,16 @@ syscall     vmhfreemem(
     /* Either coalesce with previous block or add to free list */
 
     if (top == (uint32) block) {    /* Coalesce with previous block     */
+        log_mem("vmhfreemem - coalesce \n");
         prev->mlength += nbytes;
         block = prev;
+        __set_pages_deallocated(msize, blkaddr, FALSE);
     } else {            /* Link into list as new node   */
+        log_mem("vmhfreemem - new node \n");
         block->mnext = next;
         block->mlength = nbytes;
         prev->mnext = block;
+        __set_pages_deallocated(msize, blkaddr, TRUE);
     }
 
     /* Coalesce with next block if adjacent */
@@ -103,9 +114,6 @@ syscall     vmhfreemem(
         block->mlength += next->mlength;
         block->mnext = next->mnext;
     }
-
-    // Update kernel data structures
-    __set_pages_deallocated(msize, blkaddr);
 
     restore(mask);
     return OK;

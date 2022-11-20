@@ -44,73 +44,75 @@ fidx16 getfreeframe(
 }
 
 /*------------------------------------------------------------------------
- *  deallocaframe  -  Given an index in inverted page table,
- *                    deallocate the frame and add it back to stack
- *------------------------------------------------------------------------
- */
-syscall deallocaframe(
-    fidx16 frame_idx
-) {
-    frame_t *frptr; /* Pointer to frame in inverted page table */
-    frptr = &invpt[frame_idx];
-
-    if(frame_idx < FRAME0_E1 - FRAME0) {
-        if(frspD == 0) {
-            log_fr("deallocaframe - cannot push %d into region D because stack is full \n", frame_idx);
-            return SYSERR;
-        }
-
-        frstackD[--frspD] = frame_idx;
-    } else if(frame_idx < FRAME0_E2 - FRAME0) {
-        if(frspE1 == 0) {
-            log_fr("deallocaframe - cannot push %d into region E1 because stack is full \n", frame_idx);
-            return SYSERR;
-        }
-
-        frstackE1[--frspE1] = frame_idx;
-    } else if(frame_idx < FRAME0_F - FRAME0) {
-        if(frspE2 == 0) {
-            log_fr("deallocaframe - cannot push %d into region E2 because stack is full \n", frame_idx);
-            return SYSERR;
-        }
-
-        frstackE2[--frspE2] = frame_idx;
-    } else {
-        log_fr("deallocaframe - frame %d out of bound \n", frame_idx);
-        return SYSERR;
-    }
-
-    frptr->fr_state = FR_FREE;
-
-    log_fr("deallocaframe - deallocated frame %d \n", frame_idx);
-    return OK;
-}
-
-
-/*------------------------------------------------------------------------
  *  allocaframe  -  Given an index in inverted page table,
  *                  allocate that frame for given pid
  *------------------------------------------------------------------------
  */
 syscall allocaframe(
-    fidx16 frame_idx,
+    fidx16 frame_num,
     pid32 pid
 ) {
     frame_t *frptr; /* Pointer to frame in inverted page table */
-    frptr = &invpt[frame_idx];
+    frptr = &invpt[frame_num - FRAME0];
 
-    if(frame_idx < 0 || frame_idx >= NFRAMES) {
+    if(frame_num < 0 || frame_num >= NFRAMES) {
         return SYSERR;
     }
 
     if(frptr->fr_state != FR_FREE) {
-        log_fr("allocaframe - frame %d is occupied by %d \n", frame_idx, frptr->fr_pid);
+        log_fr("allocaframe - frame %d is occupied by %d \n", frame_num, frptr->fr_pid);
         return SYSERR;
     }
 
     frptr->fr_state = FR_USED;
     frptr->fr_pid = pid;
 
-    log_fr("allocaframe - allocated frame %d to %d \n", frame_idx, pid);
+    log_fr("allocaframe - allocated frame %d to %d \n", frame_num, pid);
+    return OK;
+}
+
+/*------------------------------------------------------------------------
+ *  deallocaframe  -  Given an index in inverted page table,
+ *                    deallocate the frame and add it back to stack
+ *------------------------------------------------------------------------
+ */
+syscall deallocaframe(
+    fidx16 frame_num
+) {
+    frame_t *frptr; /* Pointer to frame in inverted page table */
+    frptr = &invpt[frame_num - FRAME0];
+
+    if(frame_num < FRAME0_E1) {
+        if(frspD == 0) {
+            log_fr("deallocaframe - cannot push %d into region D because stack is full \n", frame_num);
+            return SYSERR;
+        }
+
+        pdf("Added to D \n");
+        frstackD[--frspD] = frame_num;
+    } else if(frame_num < FRAME0_E2) {
+        if(frspE1 == 0) {
+            log_fr("deallocaframe - cannot push %d into region E1 because stack is full \n", frame_num);
+            return SYSERR;
+        }
+
+        pdf("Added to E1 \n");
+        frstackE1[--frspE1] = frame_num;
+    } else if(frame_num < FRAME0_F) {
+        if(frspE2 == 0) {
+            log_fr("deallocaframe - cannot push %d into region E2 because stack is full \n", frame_num);
+            return SYSERR;
+        }
+
+        pdf("Added to E2 \n");
+        frstackE2[--frspE2] = frame_num;
+    } else {
+        log_fr("deallocaframe - frame %d out of bound \n", frame_num);
+        return SYSERR;
+    }
+
+    frptr->fr_state = FR_FREE;
+
+    log_fr("deallocaframe - deallocated frame %d \n", frame_num);
     return OK;
 }

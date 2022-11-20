@@ -30,15 +30,16 @@ void pgfhandler(void) {
 
     log_pgf("- Maping was absent \n");
 
-    // Check if page was not allocated in the page directory
+    // Check if page was not allocated by vmhgetmem
     if(prptr->pralloc[VHNUM(pgfaddr)] == 0) {
         kprintf("- Segmentation fault PID %d \n", currpid);
+        log_pgf("----- ---------- ----- \n");
         kill(currpid);
         return; // For completeness's sake
     }
 
     // Page is allocated but not present in E1
-    // Allocate new frame in E1 and map it in PTE
+    // Allocate new frame in E1 and map it in PT
 
     // 1. Check if PDE is absent, if so then allocate a new one
     pd_t *pde = getpde((char*) pgfaddr);
@@ -56,19 +57,19 @@ void pgfhandler(void) {
 
     // 2. Get a new frame
     log_pgf("- Getting a frame in E1 \n");
-    fidx16 frame_idx = getfreeframe(REGION_E1);
-    if(frame_idx == SYSERR) {
+    fidx16 frame_num = getfreeframe(REGION_E1);
+    if(frame_num == SYSERR) {
         // TODO: Block here
         panic("Cannot find a free frame in region E1 \n");
     }
-    allocaframe(frame_idx, currpid);
+    allocaframe(frame_num, currpid);
 
     // 3. Map page to frame
     pt_t *pte = getpte((char*) pgfaddr);
-    log_pgf("- Mapping %d -> %d \n", PGNUM(pgfaddr), frame_idx + FRAME0);
+    log_pgf("- Mapping %d -> %d \n", PGNUM(pgfaddr), frame_num);
     pte->pt_pres = 1;
     pte->pt_write = 1;
-    pte->pt_base = frame_idx + FRAME0;
+    pte->pt_base = frame_num;
     log_pgf("- PTE after updating 0x%08x \n", *pte);
 
     log_pgf("----- ---------- ----- \n");

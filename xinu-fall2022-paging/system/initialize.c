@@ -101,9 +101,7 @@ void	nulluser()
 }
 
 /*------------------------------------------------------------------------
- *
  * sysinit  -  Initialize all Xinu data structures and devices
- *
  *------------------------------------------------------------------------
  */
 static	void	sysinit()

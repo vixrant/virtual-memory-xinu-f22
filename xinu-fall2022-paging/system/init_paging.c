@@ -47,13 +47,13 @@ void init_paging(void) {
         invpt[i].fr_state = FR_FREE; // all frames free
 
     for(i=0 ; i<NFRAMES_D  ; i++) // set up index stacks
-        frstackD[i] = i;
+        frstackD[i] = i + FRAME0_D;
 
     for(i=0 ; i<NFRAMES_E1 ; i++)
-        frstackE1[i] = NFRAMES_D + i;
+        frstackE1[i] = i + FRAME0_E1;
 
     for(i=0 ; i<NFRAMES_E2 ; i++)
-        frstackE2[i] = NFRAMES_D + NFRAMES_E1 + i;
+        frstackE2[i] = i + FRAME0_E2;
 
     frspD = frspE1 = frspE2 = 0; // stack pointers
 
