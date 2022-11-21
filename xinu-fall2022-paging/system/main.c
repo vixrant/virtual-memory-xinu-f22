@@ -47,7 +47,7 @@ void debugpagetable(uint32 addr) {
 
 void testframemgmt(void) {
 	pdf("----- FRAME MGMT ----- \n");
-	uint16 i;
+	int16 i;
 
 	pdf("@ Allocating %d pages \n", NFRAMES_E1);
 	for(i=0 ; i<NFRAMES_E1; i++) {
@@ -55,15 +55,22 @@ void testframemgmt(void) {
 	}
 
 	pdf("@ Requesting one more \n");
-	getfreeframe(REGION_E1);
+	i = getfreeframe(REGION_E1);
+	pdf("@ Got %d \n", i);
 
-	pdf("@ Deallocating frame 2 and 3 \n");
+	pdf("@ Deallocating frame 2050 and 3000 \n");
 	deallocaframe(2050);
 	deallocaframe(3000);
 
+	pdf("@ Requesting one \n");
+	i = getfreeframe(REGION_E1);
+	pdf("@ Got %d \n", i);
+	allocaframe(i, currpid);
+
 	pdf("@ Requesting one more \n");
-	allocaframe(getfreeframe(REGION_E1), currpid);
-	allocaframe(getfreeframe(REGION_E1), currpid);
+	i = getfreeframe(REGION_E1);
+	pdf("@ Got %d \n", i);
+	allocaframe(i, currpid);
 }
 
 void testgetmem1(void) {
@@ -180,11 +187,13 @@ void testtwoproc1(void) {
 process	main(void)
 {
 
+	#if XINUTEST
 	resume(create(testframemgmt, INITSTK, INITPRIO + 10, "Test", 0));
 	resume(create(testgetmem1, INITSTK, INITPRIO + 10, "Test", 0));
 	resume(create(testfreemem1, INITSTK, INITPRIO + 10, "Test", 0));
 	resume(create(testfreemem2, INITSTK, INITPRIO + 10, "Test", 0));
 	resume(create(testtwoproc1, INITSTK, INITPRIO + 10, "Test", 0));
+	#endif
 
 	return OK;
 }

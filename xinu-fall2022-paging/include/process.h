@@ -1,7 +1,7 @@
 /* process.h - isbadpid */
 
-#define XINUDEBUG 1
-#define XINUTEST 1
+#define XINUDEBUG 0
+#define XINUTEST 0
 
 /* Maximum number of processes in the system */
 
