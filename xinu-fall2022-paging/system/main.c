@@ -2,8 +2,8 @@
 
 #include <xinu.h>
 
+#if XINUTEST
 //*DEBUG**********************************************************************/
-#if XINUDEBUG
 
 void debugpagetable(uint32 addr) {
 	uint32 i;
@@ -43,17 +43,14 @@ void debugpagetable(uint32 addr) {
 	pdf("----------------------------- \n");
 }
 
-#endif
-
 //*TEST***********************************************************************/
-#if XINUTEST
 
 void testframemgmt(void) {
+	pdf("----- FRAME MGMT ----- \n");
 	uint16 i;
 
 	pdf("@ Allocating %d pages \n", NFRAMES_E1);
 	for(i=0 ; i<NFRAMES_E1; i++) {
-		pdf("@ i=%d \n", i);
 		allocaframe(getfreeframe(REGION_E1), currpid);
 	}
 
@@ -70,6 +67,8 @@ void testframemgmt(void) {
 }
 
 void testgetmem1(void) {
+	pdf("----- TEST GET MEM 1 ----- \n");
+
 	pdf("@ Requesting one page \n");
 	char *x = vmhgetmem(1);
 	pdf("@ Accessing all locations of this page \n");
@@ -88,6 +87,7 @@ void testgetmem1(void) {
 // Free memory
 
 void testfreemem1(void) {
+	pdf("----- TEST FREE MEM 1 ----- \n");
 	int *x, *y;
 
 	pdf("@ Requesting 2 pages \n");
@@ -108,14 +108,17 @@ void testfreemem1(void) {
 
 	pdf("@ Requesting 1 pages \n");
 	x = (int*) vmhgetmem(1);
+	*x = 1;
 	pdf("@ Got memory %08x on requesting 1 \n", x, y);
 
 	pdf("@ Requesting 1 pages \n");
 	x = (int*) vmhgetmem(1);
+	*x = 1;
 	pdf("@ Got memory %08x on requesting 1 \n", x, y);
 }
 
 void testfreemem2(void) {
+	pdf("----- TEST FREE MEM 2 ----- \n");
 	int *x, *y;
 
 	pdf("@ Requesting 2 pages \n");
@@ -165,6 +168,7 @@ void testtwoproc12(void) {
 }
 
 void testtwoproc1(void) {
+	pdf("----- TEST TWO PROCESSES ----- \n");
 	sem = 1;
 	resume(create(testtwoproc11, INITSTK, INITPRIO, "Process 1", 0));
 	resume(create(testtwoproc12, INITSTK, INITPRIO, "Process 2", 0));
@@ -175,11 +179,12 @@ void testtwoproc1(void) {
 
 process	main(void)
 {
-	#if XINUTEST
 
-	testfreemem2();
-
-	#endif
+	resume(create(testframemgmt, INITSTK, INITPRIO + 10, "Test", 0));
+	resume(create(testgetmem1, INITSTK, INITPRIO + 10, "Test", 0));
+	resume(create(testfreemem1, INITSTK, INITPRIO + 10, "Test", 0));
+	resume(create(testfreemem2, INITSTK, INITPRIO + 10, "Test", 0));
+	resume(create(testtwoproc1, INITSTK, INITPRIO + 10, "Test", 0));
 
 	return OK;
 }

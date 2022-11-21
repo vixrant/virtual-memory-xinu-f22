@@ -21,6 +21,7 @@ static void __set_pages_deallocated(
             continue;
         }
         // Set unallocated in process cell
+        log_fr("vmhfreemem - setting %d as deallocated \n", VHNUM(addr));
         prptr->pralloc[VHNUM(addr)] = FALSE;
         // Get PTE
         pt_t *pte = getpte((char*) addr);

@@ -28,7 +28,7 @@ syscall	kill(
 	// Remove pid's frames from inverted page table
 	for(i=0; i<NFRAMES; i++) {
 		if(invpt[i].fr_pid == pid) {
-			invpt[i].fr_state = FR_FREE;
+			deallocaframe(i + FRAME0);
 		}
 	}
 

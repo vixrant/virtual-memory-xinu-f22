@@ -12,7 +12,7 @@ static inline void __set_pages_allocated(
 
     for(i=0 ; i<msize ; i++) {
         uint32 addr = ((uint32) blkaddr) + (i * NBPG);
-        log_fr("vmhgetmem - allocating 0x%08x \n", addr);
+        log_fr("vmhgetmem - setting %d as allocated \n", VHNUM(addr));
         // Set allocated in process cell
         prptr->pralloc[VHNUM(addr)] = TRUE;
     }

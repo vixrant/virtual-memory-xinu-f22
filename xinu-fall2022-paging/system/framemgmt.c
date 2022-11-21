@@ -88,7 +88,7 @@ syscall deallocaframe(
             return SYSERR;
         }
 
-        pdf("Added to D \n");
+        log_fr("dellocaframe - pushed to D \n");
         frstackD[--frspD] = frame_num;
     } else if(frame_num < FRAME0_E2) {
         if(frspE1 == 0) {
@@ -96,7 +96,7 @@ syscall deallocaframe(
             return SYSERR;
         }
 
-        pdf("Added to E1 \n");
+        log_fr("dellocaframe - pushed to E1 \n");
         frstackE1[--frspE1] = frame_num;
     } else if(frame_num < FRAME0_F) {
         if(frspE2 == 0) {
@@ -104,7 +104,7 @@ syscall deallocaframe(
             return SYSERR;
         }
 
-        pdf("Added to E2 \n");
+        log_fr("dellocaframe - pushed to E2 \n");
         frstackE2[--frspE2] = frame_num;
     } else {
         log_fr("deallocaframe - frame %d out of bound \n", frame_num);
