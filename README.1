@@ -1,0 +1,83 @@
+#+title: README for Lab 5 Part 1
+#+author: Vikrant Gajria
+
+File is in org-mode format.
+
+* File changes
+** paging.h
+- Adds a ton of macros for everything to be configurable
+- Adds a struct for error code checking
+- Keeps prototypes of functions required for paging isolated from other prototypes for quick access and modification
+
+** process.h
+- Adds kernel level data structures per process
+- Adds XINUTEST and XINUDEBUG macros
+
+** xinu.h
+- Adds new header files
+- Rearranges certain header files for proper loading
+
+** create.c
+- Initializes new process table attributes
+
+** initialization.c
+- Defines kernel data structures inverted page table and identity page tables
+- Calls init_paging
+
+** kill.c
+- De-allocates the frames occupied by a process
+
+** resched.c
+- Calls pdsw() before ctxsw() to load CR3 with new process's page directory
+
+* File additions/ Modules
+** Debugging
+*** pdf.h
+- Adds module-level logging functionality
+
+** Initialization
+*** init_paging.c
+- Initializes paging in 6 steps, refer code comments for the steps
+- Sets up shared page tables
+
+*** pagingenable.S
+- Bitwise OR of CR0 to enable paging
+- Returns modified CR0
+
+** Frame management
+*** framemgmt.c
+- Defines per-region stacks and stack pointers
+- Defines functions to find a free frame, allocate a free frame and de-allocate a used frame
+
+** Page table management
+*** pagingidx.c
+- Indexes a given page directory to find a virtual address's PDE, PTE, and frame mapping
+
+*** pagingmgmt.c
+- Returns a configured page table using newpt(), and a configured page directory with identity maps using newpd()
+
+*** pdsw.c
+- Page Directory SWitch (similar to ConText SWitch)
+
+*** pgfdisp.S
+- Copy of clkdisp.S but it also loads up some global variables
+
+*** pgfhandler.c
+- Refer to code comments for its complete functionality and logic
+
+** Virtual heap management
+*** vmhfreemem.c
+- Copy of freemem.c
+- Additional functionality added in __set_pages_deallocated(), which modifies process and page tables and invalidates TLB entry using invlpg
+- Deallocates frames assigned to pages freed, if not used as free list node
+
+*** vmhgetmem.c
+- Copy of getmem.c
+- Additional functionality added in __set_pages_allocated(), which modifies process table to mark as allocated
+- It DOES NOT allocate frames!!
+
+*** vmhinit.c
+- Lazy initialization of virtual memory free list
+- Virtual memory free list cannot be initialized in create.c because in my implementation, create() is called by parent
+- But I want the free list to be in the created process's address space
+- Therefore vmhinit() is called everytime vmhgetmem() or vmhfreemem() is used
