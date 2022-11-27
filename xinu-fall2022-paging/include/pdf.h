@@ -36,3 +36,9 @@
 #else
 #define log_fr(...) ;
 #endif
+
+#if DEBUG_BS
+#define log_bs(...) pdf(__VA_ARGS__)
+#else
+#define log_bs(...) ;
+#endif

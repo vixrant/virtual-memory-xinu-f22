@@ -189,10 +189,10 @@ process	main(void)
 
 	#if XINUTEST
 	resume(create(testframemgmt, INITSTK, INITPRIO + 10, "Test", 0));
-	resume(create(testgetmem1, INITSTK, INITPRIO + 10, "Test", 0));
-	resume(create(testfreemem1, INITSTK, INITPRIO + 10, "Test", 0));
-	resume(create(testfreemem2, INITSTK, INITPRIO + 10, "Test", 0));
-	resume(create(testtwoproc1, INITSTK, INITPRIO + 10, "Test", 0));
+	resume(create(testgetmem1,   INITSTK, INITPRIO + 10, "Test", 0));
+	resume(create(testfreemem1,  INITSTK, INITPRIO + 10, "Test", 0));
+	resume(create(testfreemem2,  INITSTK, INITPRIO + 10, "Test", 0));
+	resume(create(testtwoproc1,  INITSTK, INITPRIO + 10, "Test", 0));
 	#endif
 
 	return OK;

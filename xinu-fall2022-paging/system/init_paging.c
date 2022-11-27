@@ -43,8 +43,11 @@ void init_paging(void) {
     uint16 i; /* Initialization loop iterator */
 
     // 1. Set-up frame management
-    for(i=0 ; i<NFRAMES ; i++)
+    for(i=0 ; i<NFRAMES ; i++) {
+        invpt[i].fr_idx = i; // list indexes
         invpt[i].fr_state = FR_FREE; // all frames free
+        invpt[i].fr_next = invpt[i].fr_prev = NULL; // linked list
+    }
 
     for(i=0 ; i<NFRAMES_D  ; i++) // set up index stacks
         frstackD[i] = i + FRAME0_D;

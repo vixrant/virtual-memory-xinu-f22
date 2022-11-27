@@ -76,6 +76,7 @@ typedef struct {
 
 /* Macro expressions */
 
+#define INIDX(x) (x) - FRAME0
 #define VHNUM(x) (x >> 12) - FRAME0_VF
 #define PGNUM(x) (x >> 12)
 #define PDIDX(x) (x >> 22)
@@ -88,29 +89,33 @@ typedef struct {
 
 #define fidx16 int16
 
-typedef struct {
-  pid32        fr_pid;          /* owner of frame */
-  unsigned int fr_state : 1;    /* state of frame */
+typedef struct invptent {
+  pid32            fr_pid;          /* owner of frame */
+  fidx16           fr_idx;          /* index of frame for link list */
+  struct invptent* fr_next;
+  struct invptent* fr_prev;
+  unsigned int     fr_state : 1;    /* state of frame */
 } frame_t;
 
 extern frame_t invpt[NFRAMES];  /* inverted page table
                                  * for regions D, E1, E2 */
 
+extern fidx16 frheadE1, frtailE1; /* head and tail
+                                   * for FIFO replacement policy */
+
 /* Stack of free frames */
 
 extern fidx16 frstackD[NFRAMES_D];
-extern int16 frspD;
+extern int16  frspD;
 
 extern fidx16 frstackE1[NFRAMES_E1];
-extern int16 frspE1;
+extern int16  frspE1;
 
 extern fidx16 frstackE2[NFRAMES_E2];
-extern int16 frspE2;
+extern int16  frspE2;
 
 /* Identity maps for regions A, B, C, D, E1, E2, G */
 extern pt_t *identity_pt[5];
-
-/* Prototypes required for page faults */
 
 /* Page fault error code */
 typedef struct {
@@ -127,9 +132,10 @@ typedef struct {
   unsigned int pgf_av2   : 16;   /* reserved bits */
 } pgf_t;
 
+/* Prototypes required for page faults */
+
 extern pgf_t pgferr; /* Error code */
 extern uint32 pgfaddr; /* Faulty address */
-
 
 /* Prototypes required for paging */
 

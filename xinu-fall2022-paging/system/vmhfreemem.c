@@ -35,8 +35,8 @@ static void __set_pages_deallocated(
             fidx16 frame_num = pte->pt_base;
             // Mark the frame as free in inverted page table
             // Add back to its stack
-            if(invpt[frame_num - FRAME0].fr_pid != currpid) {
-                kprintf("Error in code: Deallocating frame belonging to %d that does not belong to %d \n", invpt[frame_num - FRAME0].fr_pid, currpid);
+            if(invpt[INIDX(frame_num)].fr_pid != currpid) {
+                kprintf("Error in code: Deallocating frame belonging to %d that does not belong to %d \n", invpt[INIDX(frame_num)].fr_pid, currpid);
             }
             deallocaframe(frame_num);
         }
