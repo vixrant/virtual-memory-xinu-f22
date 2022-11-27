@@ -13,7 +13,7 @@ typedef struct {
   unsigned int pd_fmb   : 1;    /* four MB pages?     */
   unsigned int pd_global: 1;    /* global (ignored)     */
   unsigned int pd_avail : 3;    /* for programmer's use     */
-  unsigned int pd_base  : 20;     /* location of page table?  */
+  unsigned int pd_base  : 20;   /* location of page table?  */
 } pd_t;
 
 /* Structure for a page table entry */
@@ -28,8 +28,9 @@ typedef struct {
   unsigned int pt_dirty : 1;    /* page was written?    */
   unsigned int pt_mbz   : 1;    /* must be zero       */
   unsigned int pt_global: 1;    /* should be zero in 586  */
-  unsigned int pt_avail : 3;    /* for programmer's use     */
-  unsigned int pt_base  : 20;     /* location of page?    */
+  unsigned int pt_swap  : 1;    /* for programmer's use: swapped?  */
+  unsigned int pt_avail : 2;    /* for programmer's use     */
+  unsigned int pt_base  : 20;   /* location of page?    */
 } pt_t;
 
 #define NBPG      4096  /* number of bytes per page   */
@@ -151,8 +152,8 @@ extern syscall allocaframe(fidx16, pid32);
 extern syscall deallocaframe(fidx16);
 
 /* in file pagingidx.c */
-extern pd_t *getpde(char*);
-extern pt_t *getpte(char*);
+extern pd_t *getpde(uint32);
+extern pt_t *getpte(uint32);
 extern fidx16 getframenum(char*);
 
 /* in file pdsw.S */

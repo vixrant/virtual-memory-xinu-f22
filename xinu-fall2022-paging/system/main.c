@@ -166,11 +166,8 @@ void testtwoproc11(void) {
 void testtwoproc12(void) {
 	while(sem == 1) ;
 
-	int t = 0;
-
 	pdf("@2 Process unblocked, trying to access location \n");
-	t = *testsharedlocation;
-
+	int t = *testsharedlocation;
 	pdf("@2 ERROR Was able to access t = %d \n", t);
 }
 
@@ -188,11 +185,11 @@ process	main(void)
 {
 
 	#if XINUTEST
-	resume(create(testframemgmt, INITSTK, INITPRIO + 10, "Test", 0));
-	resume(create(testgetmem1,   INITSTK, INITPRIO + 10, "Test", 0));
-	resume(create(testfreemem1,  INITSTK, INITPRIO + 10, "Test", 0));
+	/* resume(create(testframemgmt, INITSTK, INITPRIO + 10, "Test", 0)); */
+	/* resume(create(testgetmem1,   INITSTK, INITPRIO + 10, "Test", 0)); */
+	/* resume(create(testfreemem1,  INITSTK, INITPRIO + 10, "Test", 0)); */
 	resume(create(testfreemem2,  INITSTK, INITPRIO + 10, "Test", 0));
-	resume(create(testtwoproc1,  INITSTK, INITPRIO + 10, "Test", 0));
+	/* resume(create(testtwoproc1,  INITSTK, INITPRIO + 10, "Test", 0)); */
 	#endif
 
 	return OK;

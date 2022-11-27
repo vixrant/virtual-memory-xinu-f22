@@ -44,7 +44,7 @@ void init_paging(void) {
 
     // 1. Set-up frame management
     for(i=0 ; i<NFRAMES ; i++) {
-        invpt[i].fr_idx = i; // list indexes
+        invpt[i].fr_idx = i + FRAME0; // list indexes
         invpt[i].fr_state = FR_FREE; // all frames free
         invpt[i].fr_next = invpt[i].fr_prev = NULL; // linked list
     }

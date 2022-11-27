@@ -5,6 +5,48 @@
 pgf_t pgferr; /* Error code */
 uint32 pgfaddr; /* Faulty address */
 
+// PGF Invariant:
+// If a page is marked as allocated,
+// then the page will always have
+// a corresponding PDE and PTE
+inline void __pde_inv_check() {
+    pd_t *pde = getpde(pgfaddr);
+
+    if(pde->pd_pres == 0) {
+        log_pgf("- Page Table is absent \n");
+        pt_t *ptptr = newpt(currpid);
+        if(ptptr == (pt_t*) SYSERR) {
+            panic("Cannot find a free frame in region D \n");
+        }
+        pde->pd_pres = 1;
+        pde->pd_write = 1;
+        pde->pd_base = ((uint32) ptptr / NBPG);
+    }
+}
+
+// Assigns new frame in E1 to page
+inline void __assign_new_frame() {
+    // 1. Get a new frame
+    log_pgf("- Assigning to a new frame in E1 \n");
+    fidx16 frame_num = getfreeframe(REGION_E1);
+    if(frame_num == SYSERR) {
+        // TODO: Block here
+        panic("Cannot find a free frame in region E1 \n");
+    }
+
+    // 2. Occupy frame
+    allocaframe(frame_num, currpid);
+
+    // 3. Map page to frame
+    pt_t *pte = getpte(pgfaddr);
+    log_pgf("- Mapping %d -> %d \n", PGNUM(pgfaddr), frame_num);
+    pte->pt_pres = 1;
+    pte->pt_write = 1;
+    pte->pt_swap = 0;
+    pte->pt_base = frame_num;
+    log_pgf("- PTE after updating 0x%08x \n", *pte);
+}
+
 /*------------------------------------------------------------------------
  * pgfhandler - high level page fault interrupt handler
  *------------------------------------------------------------------------
@@ -21,14 +63,12 @@ void pgfhandler(void) {
     log_pgf("- PDIDX: 0x%x \n", PDIDX(pgfaddr));
     log_pgf("- PTIDX: 0x%x \n", PTIDX(pgfaddr));
 
-    // If error was caused due to access violation issue
+    // Check if error was caused due to access violation issue
     if(pgferr.pgf_pres == 1) {
-        log_pgf("System page fault");
+        log_pgf("- System page fault PID %d \n", currpid);
         log_pgf("----- ---------- ----- \n");
         return;
     }
-
-    log_pgf("- Maping was absent \n");
 
     // Check if page was not allocated by vmhgetmem
     if(prptr->pralloc[VHNUM(pgfaddr)] == 0) {
@@ -39,38 +79,26 @@ void pgfhandler(void) {
     }
 
     // Page is allocated but not present in E1
-    // Allocate new frame in E1 and map it in PT
+    // There are multiple scenarios from here.
+    // 1. Page was never assigned to a frame in E1
+    // 2. Page was assigned a frame, but swapped out to E2
+    // Before we move on to these scenarios,
+    // Check for system invariants
 
-    // 1. Check if PDE is absent, if so then allocate a new one
-    pd_t *pde = getpde((char*) pgfaddr);
-    if(pde->pd_pres == 0) {
-        log_pgf("- Page Table is absent \n");
-        pt_t *ptptr = newpt(currpid);
-        if(ptptr == (pt_t*) SYSERR) {
-            panic("Cannot find a free frame in region D \n");
-        }
-        pde->pd_pres = 1;
-        pde->pd_write = 1;
-        pde->pd_base = ((uint32) ptptr / NBPG);
+    // Always ensure the existence of PDE and PTE!
+    __pde_inv_check();
+
+    // If a page was never assigned a frame,
+    // it's pt_swap bit in page table will be 0
+    pt_t *pte = getpte(pgfaddr);
+    if(pte->pt_swap == 0) {
+        log_pgf("- Page was never assigned \n");
+        __assign_new_frame();
+    } else {
+        log_pgf("- Page was swapped out \n");
+        panic("Not implemented \n");
     }
-    log_pgf("- PDE 0x%08x \n", *pde);
 
-    // 2. Get a new frame
-    log_pgf("- Getting a frame in E1 \n");
-    fidx16 frame_num = getfreeframe(REGION_E1);
-    if(frame_num == SYSERR) {
-        // TODO: Block here
-        panic("Cannot find a free frame in region E1 \n");
-    }
-    allocaframe(frame_num, currpid);
-
-    // 3. Map page to frame
-    pt_t *pte = getpte((char*) pgfaddr);
-    log_pgf("- Mapping %d -> %d \n", PGNUM(pgfaddr), frame_num);
-    pte->pt_pres = 1;
-    pte->pt_write = 1;
-    pte->pt_base = frame_num;
-    log_pgf("- PTE after updating 0x%08x \n", *pte);
 
     log_pgf("----- ---------- ----- \n");
     return;

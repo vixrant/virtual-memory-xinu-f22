@@ -25,12 +25,12 @@ void __remove_from_used_ll(fidx16 frame_num) {
     } else if(frheadE1 == frame_num) {
         // Deallocating head
         frheadE1 = frptr->fr_next->fr_idx;
-        log_bs("deallocaframe %d - moved head to %d \n", frame_num, frheadE1 + FRAME0);
+        log_bs("deallocaframe %d - moved head to %d \n", frame_num, frheadE1);
         frptr->fr_next->fr_prev = NULL;
     } else if(frtailE1 == frame_num) {
         // Deallocating tail
         frtailE1 = frptr->fr_prev->fr_idx;
-        log_bs("deallocaframe %d - moved tail to %d \n", frame_num, frtailE1 + FRAME0);
+        log_bs("deallocaframe %d - moved tail to %d \n", frame_num, frtailE1);
         frptr->fr_prev->fr_next = NULL;
     } else {
         // Deallocating a middle node
@@ -47,16 +47,16 @@ void __insert_to_used_ll(fidx16 frame_num) {
     frame_t *frptr = &invpt[INIDX(frame_num)];
 
     if(frheadE1 == SYSERR) { // DLL is empty
-        frheadE1 = frtailE1 = frame_num;
         frptr->fr_next = frptr->fr_prev = NULL;
-        log_bs("allocaframe - made frame %d as start of ULL \n", frame_num);
+        frheadE1 = frtailE1 = frame_num; // 0 <- x -> 0
+        log_bs("allocaframe - made frame %d as start of ULL \n", frheadE1);
     } else { // DLL has head and tail
-        frame_t *frtailptr = &invpt[frtailE1];
+        frame_t *frtailptr = &invpt[INIDX(frtailE1)];
         frtailptr->fr_next = frptr; // t -> x
         frptr->fr_prev = frtailptr; // t <- x
-        frptr->fr_next = NULL;      // x -> NULL
+        frptr->fr_next = NULL;      // x -> 0
         frtailE1 = frame_num;
-        log_bs("allocaframe - added frame %d to end of ULL \n", frame_num);
+        log_bs("allocaframe - added frame %d to end of ULL \n", frtailE1);
     }
 }
 
@@ -144,6 +144,11 @@ syscall deallocaframe(
     fidx16 frame_num
 ) {
     frame_t *frptr = &invpt[INIDX(frame_num)];
+
+    if(frptr->fr_state == FR_FREE) {
+        // No action required
+        return OK;
+    }
 
     // Try to push to correct stack
     if(frame_num < FRAME0_E1) {

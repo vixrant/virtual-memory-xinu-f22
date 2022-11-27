@@ -6,7 +6,7 @@
  * getpde - Get PDE from current process's PD
  *------------------------------------------------------------------------
  */
-pd_t *getpde(char* addr) {
+pd_t *getpde(uint32 addr) {
     pd_t *pdptr = proctab[currpid].prpd;
     pd_t *pde = &pdptr[PDIDX((uint32) addr)];
     return pde;
@@ -16,7 +16,7 @@ pd_t *getpde(char* addr) {
  * getpte - Get PTE from current process's PD
  *------------------------------------------------------------------------
  */
-pt_t *getpte(char* addr) {
+pt_t *getpte(uint32 addr) {
     pd_t *pde = getpde(addr);
     pt_t *ptptr = (pt_t*) (pde->pd_base * NBPG);
     pt_t *pte = &ptptr[PTIDX((uint32) addr)];

@@ -24,7 +24,7 @@ static void __set_pages_deallocated(
         log_fr("vmhfreemem - setting %d as deallocated \n", VHNUM(addr));
         prptr->pralloc[VHNUM(addr)] = FALSE;
         // Get PTE
-        pt_t *pte = getpte((char*) addr);
+        pt_t *pte = getpte(addr);
         if(pte->pt_pres == 1) {
             log_fr("vmhfreemem - 0x%08x maps to frame %d \n", addr, getframenum(addr));
             // Mark as absent
