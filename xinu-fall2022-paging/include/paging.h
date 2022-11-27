@@ -88,14 +88,17 @@ typedef struct {
 #define FR_FREE 0 /* frame is free */
 #define FR_USED 1 /* frame is used for directory */
 
+#define FR_PGUNUSED -1 /* for allocaframe, when pgnum field is unused */
+
 #define fidx16 int16
 
 typedef struct invptent {
   pid32            fr_pid;          /* owner of frame */
   fidx16           fr_idx;          /* index of frame for link list */
-  struct invptent* fr_next;
-  struct invptent* fr_prev;
+  struct invptent* fr_next;         /* next node in used LL */
+  struct invptent* fr_prev;         /* prev node in used LL  */
   unsigned int     fr_state : 1;    /* state of frame */
+  unsigned int     fr_page : 20;    /* current virtual page number */
 } frame_t;
 
 extern frame_t invpt[NFRAMES];  /* inverted page table
@@ -148,8 +151,10 @@ extern pt_t *newpt(pid32);
 
 /* in file framemgmt.c */
 extern fidx16 getfreeframe(region);
-extern syscall allocaframe(fidx16, pid32);
+extern syscall allocaframe(fidx16, pid32, uint32);
 extern syscall deallocaframe(fidx16);
+extern syscall swapframe(fidx16, fidx16);
+extern syscall evictframe();
 
 /* in file pagingidx.c */
 extern pd_t *getpde(uint32);

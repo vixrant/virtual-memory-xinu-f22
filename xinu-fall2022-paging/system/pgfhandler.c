@@ -35,7 +35,7 @@ inline void __assign_new_frame() {
     }
 
     // 2. Occupy frame
-    allocaframe(frame_num, currpid);
+    allocaframe(frame_num, currpid, PGNUM(pgfaddr));
 
     // 3. Map page to frame
     pt_t *pte = getpte(pgfaddr);

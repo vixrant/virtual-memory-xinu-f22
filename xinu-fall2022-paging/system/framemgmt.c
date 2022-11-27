@@ -15,7 +15,7 @@ fidx16 frheadE1 = SYSERR;
 fidx16 frtailE1 = SYSERR;
 
 // Remove frame from E1's linked list
-void __remove_from_used_ll(fidx16 frame_num) {
+inline void __remove_from_used_ll(fidx16 frame_num) {
     frame_t *frptr = &invpt[INIDX(frame_num)];
 
     if(frheadE1 == frame_num && frtailE1 == frame_num) {
@@ -43,7 +43,7 @@ void __remove_from_used_ll(fidx16 frame_num) {
 }
 
 // Add frame to E1's linked list in FIFO
-void __insert_to_used_ll(fidx16 frame_num) {
+inline void __insert_to_used_ll(fidx16 frame_num) {
     frame_t *frptr = &invpt[INIDX(frame_num)];
 
     if(frheadE1 == SYSERR) { // DLL is empty
@@ -59,6 +59,23 @@ void __insert_to_used_ll(fidx16 frame_num) {
         log_bs("allocaframe - added frame %d to end of ULL \n", frtailE1);
     }
 }
+
+// Dequeue from E1's linked list in FIFO
+inline fidx16 __dequeue_from_used_ll() {
+    // List is empty
+    if(frheadE1 == SYSERR) {
+        return SYSERR;
+    }
+
+    // Front of queue
+    fidx16 retval = frheadE1;
+
+    // Remove from list
+    __remove_from_used_ll(retval);
+
+    return retval;
+}
+
 
 /*------------------------------------------------------------------------
  *  getfreeframe  -  Return frame in region
@@ -92,21 +109,14 @@ fidx16 getfreeframe(
 }
 
 /*------------------------------------------------------------------------
- *  getusedframe  -  Return frame in region E1 in FIFO manner
- *------------------------------------------------------------------------
- */
-fidx16 getusedframe() {
-    return frheadE1;
-}
-
-/*------------------------------------------------------------------------
  *  allocaframe  -  Given an index in inverted page table,
  *                  allocate that frame for given pid
  *------------------------------------------------------------------------
  */
 syscall allocaframe(
     fidx16 frame_num,
-    pid32 pid
+    pid32 pid,
+    uint32 page
 ) {
     frame_t *frptr; /* Pointer to frame in inverted page table */
     frptr = &invpt[INIDX(frame_num)];
@@ -124,6 +134,7 @@ syscall allocaframe(
     // Set invpt fields
     frptr->fr_state = FR_USED;
     frptr->fr_pid = pid;
+    frptr->fr_page = page;
 
     // Add to used linked list
     if(FRAME0_E1 <= frame_num && frame_num < FRAME0_F) {
@@ -187,5 +198,82 @@ syscall deallocaframe(
     frptr->fr_state = FR_FREE;
 
     log_fr("deallocaframe - deallocated frame %d \n", frame_num);
+    return OK;
+}
+
+
+/*------------------------------------------------------------------------
+ *  swapframe -  Swap a frame f in E1 with frame g in E2
+ *               Performs O(1) extra space swap
+ *------------------------------------------------------------------------
+ */
+syscall swapframe(
+    fidx16 f, /* Frame number in E1 */
+    fidx16 g  /* Frame number in E2 */
+) {
+    frame_t *fptr = &invpt[INIDX(f)];
+    frame_t *gptr = &invpt[INIDX(g)];
+
+    // TODO: Add range checks
+
+    // 1. XOR swap all bytes of f and g
+    uint16 i;
+    char *faddr = (char*) (f * NBPG);
+    char *gaddr = (char*) (g * NBPG);
+    for(i=0 ; i<NBPG ; i++) {
+        faddr[i] ^= gaddr[i];
+        gaddr[i] ^= faddr[i];
+        faddr[i] ^= gaddr[i];
+    }
+
+    // 2. Mark f's PTE as swapped, absent
+    pt_t *fpte = getpte(fptr->fr_page * NBPG);
+    fpte->pt_swap = 1;
+    fpte->pt_pres = 0;
+
+    // 3. Mark g's PTE as unswapped, present
+    pt_t *gpte = getpte(gptr->fr_page * NBPG);
+    gpte->pt_swap = 0;
+    gpte->pt_pres = 1;
+
+    return OK;
+}
+
+/*------------------------------------------------------------------------
+ *  evictframe -  Evicts the frame at front of FIFO queue of E1 to E2
+ *------------------------------------------------------------------------
+ */
+syscall evictframe() {
+    // 1. Get destination frame in E2
+    fidx16 dest = getfreeframe(REGION_E2);
+    if(dest == SYSERR) {
+        log_bs("evictframe - no free frames in E2 \n");
+        return SYSERR;
+    }
+
+    // 2. Get source frame in E1 from FIFO list
+    fidx16 victim = __dequeue_from_used_ll();
+    if(victim == SYSERR) {
+        log_bs("evictframe - no frames to evict \n");
+        return SYSERR;
+    }
+
+    // 3. Copy destination <- source
+    uint16 i;
+    char *vaddr = (char*) (victim * NBPG);
+    char *daddr = (char*) (dest * NBPG);
+    for(i=0 ; i<NBPG ; i++) {
+        daddr[i] = vaddr[i];
+    }
+
+    // 4. Mark victim's PTE as swapped, absent
+    frame_t *vptr = &invpt[INIDX(victim)];
+    pt_t *vpte = getpte(vptr->fr_page * NBPG);
+    vpte->pt_swap = 1;
+    vpte->pt_pres = 0;
+
+    // 5. Deallocated victim frame
+    deallocaframe(victim);
+
     return OK;
 }

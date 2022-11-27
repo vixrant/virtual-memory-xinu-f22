@@ -51,7 +51,7 @@ void testframemgmt(void) {
 
 	pdf("@ Allocating %d pages \n", NFRAMES_E1);
 	for(i=0 ; i<NFRAMES_E1; i++) {
-		allocaframe(getfreeframe(REGION_E1), currpid);
+		allocaframe(getfreeframe(REGION_E1), currpid, FR_PGUNUSED);
 	}
 
 	pdf("@ Requesting one more \n");
@@ -65,12 +65,12 @@ void testframemgmt(void) {
 	pdf("@ Requesting one \n");
 	i = getfreeframe(REGION_E1);
 	pdf("@ Got %d \n", i);
-	allocaframe(i, currpid);
+	allocaframe(i, currpid, FR_PGUNUSED);
 
 	pdf("@ Requesting one more \n");
 	i = getfreeframe(REGION_E1);
 	pdf("@ Got %d \n", i);
-	allocaframe(i, currpid);
+	allocaframe(i, currpid, FR_PGUNUSED);
 }
 
 void testgetmem1(void) {
