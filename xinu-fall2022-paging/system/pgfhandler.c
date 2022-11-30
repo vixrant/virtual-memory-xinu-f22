@@ -26,12 +26,22 @@ inline void __pde_inv_check() {
 
 // Assigns new frame in E1 to page
 inline void __assign_new_frame() {
+    fidx16 frame_num = SYSERR;
+
     // 1. Get a new frame
     log_pgf("- Assigning to a new frame in E1 \n");
-    fidx16 frame_num = getfreeframe(REGION_E1);
-    if(frame_num == SYSERR) {
-        // TODO: Block here
-        panic("Cannot find a free frame in region E1 \n");
+    frame_num = getfreeframe(REGION_E1);
+    while(frame_num == SYSERR) {
+        // Could not get a frame in E1
+        // Try to evict a frame to E2
+        while(evictframe() == SYSERR) {
+            // No space in E2
+            // Block until frames become free
+            panic("TODO: Block");
+        }
+
+        // Try to get a frame again
+        frame_num = getfreeframe(REGION_E1);
     }
 
     // 2. Occupy frame
@@ -45,6 +55,10 @@ inline void __assign_new_frame() {
     pte->pt_swap = 0;
     pte->pt_base = frame_num;
     log_pgf("- PTE after updating 0x%08x \n", *pte);
+}
+
+// Restores the backed up frame in E2 to E1
+inline void __restore_swapped_frame() {
 }
 
 /*------------------------------------------------------------------------
