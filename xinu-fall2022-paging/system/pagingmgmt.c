@@ -19,7 +19,7 @@ pt_t *newpt(pid32 pid) {
     }
 
     // Occupy it
-    if(allocaframe(frame_num, pid, FR_PGUNUSED) == SYSERR) {
+    if(invtakeframe(frame_num, pid, (pt_t*) FR_PGUNUSED) == SYSERR) {
         return (pt_t*) SYSERR;
     }
 
@@ -48,7 +48,7 @@ pd_t *newpd(pid32 pid) {
     }
 
     // Occupy it
-    if(allocaframe(frame_num, pid, FR_PGUNUSED) == SYSERR) {
+    if(invtakeframe(frame_num, pid, (pt_t*) FR_PGUNUSED) == SYSERR) {
         return (pd_t*) SYSERR;
     }
 

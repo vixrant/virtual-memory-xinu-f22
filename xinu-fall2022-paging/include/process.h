@@ -19,6 +19,7 @@
 #define	PR_SUSP		5	/* Process is suspended			*/
 #define	PR_WAIT		6	/* Process is on semaphore queue	*/
 #define	PR_RECTIM	7	/* Process is receiving with timeout	*/
+#define PR_FRBLOCK  8   /* Process is blocked on frames */
 
 /* Miscellaneous process definitions */
 

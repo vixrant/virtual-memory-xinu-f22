@@ -38,7 +38,7 @@ static void __set_pages_deallocated(
             if(invpt[INIDX(frame_num)].fr_pid != currpid) {
                 kprintf("Error in code: Deallocating frame belonging to %d that does not belong to %d \n", invpt[INIDX(frame_num)].fr_pid, currpid);
             }
-            deallocaframe(frame_num);
+            invfreeframe(frame_num);
         }
     }
 }
@@ -115,6 +115,8 @@ syscall     vmhfreemem(
         block->mlength += next->mlength;
         block->mnext = next->mnext;
     }
+
+    framewakeup(); // Wakeup processes waiting for frames
 
     restore(mask);
     return OK;

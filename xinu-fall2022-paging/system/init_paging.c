@@ -40,25 +40,9 @@ static inline int16 __identity_pt_init(void) {
  */
 void init_paging(void) {
     struct procent *prptr = &proctab[NULLPROC];
-    uint16 i; /* Initialization loop iterator */
 
     // 1. Set-up frame management
-    for(i=0 ; i<NFRAMES ; i++) {
-        invpt[i].fr_idx = i + FRAME0; // list indexes
-        invpt[i].fr_state = FR_FREE; // all frames free
-        invpt[i].fr_next = invpt[i].fr_prev = NULL; // linked list
-    }
-
-    for(i=0 ; i<NFRAMES_D  ; i++) // set up index stacks
-        frstackD[i] = i + FRAME0_D;
-
-    for(i=0 ; i<NFRAMES_E1 ; i++)
-        frstackE1[i] = i + FRAME0_E1;
-
-    for(i=0 ; i<NFRAMES_E2 ; i++)
-        frstackE2[i] = i + FRAME0_E2;
-
-    frspD = frspE1 = frspE2 = 0; // stack pointers
+    init_invpt();
 
     // 2. Set up shared page tables
     if(__identity_pt_init() == SYSERR) {
@@ -77,6 +61,4 @@ void init_paging(void) {
 
     // 6. Enable paging
     log_init("paginginit - enabled paging \n");
-    uint32 cr0 = pagingenable();
-    log_init("cr0 = %x \n", cr0);
 }

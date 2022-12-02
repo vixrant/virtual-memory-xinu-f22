@@ -24,42 +24,6 @@ inline void __pde_inv_check() {
     }
 }
 
-// Assigns new frame in E1 to page
-inline void __assign_new_frame() {
-    fidx16 frame_num = SYSERR;
-
-    // 1. Get a new frame
-    log_pgf("- Assigning to a new frame in E1 \n");
-    frame_num = getfreeframe(REGION_E1);
-    while(frame_num == SYSERR) {
-        // Could not get a frame in E1
-        // Try to evict a frame to E2
-        while(evictframe() == SYSERR) {
-            // No space in E2
-            // Block until frames become free
-            panic("TODO: Block");
-        }
-
-        // Try to get a frame again
-        frame_num = getfreeframe(REGION_E1);
-    }
-
-    // 2. Occupy frame
-    allocaframe(frame_num, currpid, PGNUM(pgfaddr));
-
-    // 3. Map page to frame
-    pt_t *pte = getpte(pgfaddr);
-    log_pgf("- Mapping %d -> %d \n", PGNUM(pgfaddr), frame_num);
-    pte->pt_pres = 1;
-    pte->pt_write = 1;
-    pte->pt_swap = 0;
-    pte->pt_base = frame_num;
-    log_pgf("- PTE after updating 0x%08x \n", *pte);
-}
-
-// Restores the backed up frame in E2 to E1
-inline void __restore_swapped_frame() {
-}
 
 /*------------------------------------------------------------------------
  * pgfhandler - high level page fault interrupt handler
@@ -94,25 +58,51 @@ void pgfhandler(void) {
 
     // Page is allocated but not present in E1
     // There are multiple scenarios from here.
-    // 1. Page was never assigned to a frame in E1
-    // 2. Page was assigned a frame, but swapped out to E2
     // Before we move on to these scenarios,
     // Check for system invariants
 
     // Always ensure the existence of PDE and PTE!
     __pde_inv_check();
 
-    // If a page was never assigned a frame,
-    // it's pt_swap bit in page table will be 0
-    pt_t *pte = getpte(pgfaddr);
-    if(pte->pt_swap == 0) {
-        log_pgf("- Page was never assigned \n");
-        __assign_new_frame();
-    } else {
-        log_pgf("- Page was swapped out \n");
-        panic("Not implemented \n");
-    }
+    // Get state of the system
+    // To select which scenario we are in
+    bool8 e1full  = !hasfreeframe(REGION_E1);
+    bool8 e2full  = !hasfreeframe(REGION_E2);
+    bool8 swapped = getpte(pgfaddr)->pt_swap;
 
+    log_pgf("- E2Full=%d E1Full=%d Swapped=%d \n", e1full, e2full, swapped);
+
+    // Scenarios
+    if(swapped) {
+        // Old frame is in E2
+        if(e1full && e2full) {
+            // Swap it into E1
+            swapframe();
+        } else {
+            if(e1full) {
+                // Make space in E1
+                evictframe();
+            }
+
+            // Move old frame into E2
+            restoreframe();
+        }
+    } else {
+        // Fresh frame in E1 required
+        while(e1full && e2full) {
+            // Block until space in
+            // E1 or E2
+            frameblock();
+        }
+
+        if(e1full) {
+            // Make space in E1
+            evictframe();
+        }
+
+        // Assign a new frame
+        mapfreeframe();
+    }
 
     log_pgf("----- ---------- ----- \n");
     return;

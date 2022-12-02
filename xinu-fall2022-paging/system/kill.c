@@ -29,7 +29,7 @@ syscall	kill(
 	for(i=0; i<NFRAMES; i++) {
 		if(invpt[i].fr_pid == pid && invpt[i].fr_state != FR_FREE) {
 			pdf("kill - deallocating %d \n", i + FRAME0);
-			deallocaframe(i + FRAME0);
+			invfreeframe(i + FRAME0);
 		}
 	}
 
@@ -42,6 +42,7 @@ syscall	kill(
 	switch (prptr->prstate) {
 	case PR_CURR:
 		prptr->prstate = PR_FREE;	/* Suicide */
+		framewakeup(); // Wakeup processes waiting for frames
 		resched();
 
 	case PR_SLEEP:
@@ -62,6 +63,7 @@ syscall	kill(
 		prptr->prstate = PR_FREE;
 	}
 
+	framewakeup(); // Wakeup processes waiting for frames
 	restore(mask);
 	return OK;
 }
