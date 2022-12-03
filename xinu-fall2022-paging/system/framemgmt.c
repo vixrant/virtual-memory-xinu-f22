@@ -8,8 +8,8 @@
 
 /* Inverted page table */
 frame_t invpt[NFRAMES];
-fidx16 frheadE1 = SYSERR;
-fidx16 frtailE1 = SYSERR;
+fidx16 evicthead = SYSERR;
+fidx16 evicttail = SYSERR;
 
 fidx16 frstackD[NFRAMES_D];
 int16  frspD;
@@ -23,23 +23,24 @@ int16  frspE2;
 // Remove frame from E1's linked list
 inline void __remove_from_used_ll(fidx16 frame_num) {
     frame_t *frptr = &invpt[INIDX(frame_num)];
+    log_bs("invfreeframe %d - removing from linked list \n", frame_num);
 
-    if(frheadE1 == frame_num && frtailE1 == frame_num) {
+    if(evicthead == frame_num && evicttail == frame_num) {
         // Only one node in linked list
-        frheadE1 = frtailE1 = SYSERR;
+        evicthead = evicttail = SYSERR;
         log_bs("invfreeframe %d - deleted linked list \n", frame_num);
-    } else if(frheadE1 == frame_num) {
-        // Invfreeting head
-        frheadE1 = frptr->fr_next->fr_idx;
-        log_bs("invfreeframe %d - moved head to %d \n", frame_num, frheadE1);
+    } else if(evicthead == frame_num) {
+        // Invfree head
+        evicthead = frptr->fr_next->fr_idx;
         frptr->fr_next->fr_prev = NULL;
-    } else if(frtailE1 == frame_num) {
-        // Invfreeting tail
-        frtailE1 = frptr->fr_prev->fr_idx;
-        log_bs("invfreeframe %d - moved tail to %d \n", frame_num, frtailE1);
+        log_bs("invfreeframe %d - moved head to %d \n", frame_num, evicthead);
+    } else if(evicttail == frame_num) {
+        // Invfree tail
+        evicttail = frptr->fr_prev->fr_idx;
         frptr->fr_prev->fr_next = NULL;
+        log_bs("invfreeframe %d - moved tail to %d \n", frame_num, evicttail);
     } else {
-        // Invfreeting a middle node
+        // Invfree a middle node
         frptr->fr_prev->fr_next = frptr->fr_next;
         frptr->fr_next->fr_prev = frptr->fr_prev;
         log_bs("invfreeframe %d - deleted middle node \n", frame_num);
@@ -51,21 +52,41 @@ inline void __remove_from_used_ll(fidx16 frame_num) {
 // Add frame to E1's linked list in FIFO
 inline void __insert_to_used_ll(fidx16 frame_num) {
     frame_t *frptr = &invpt[INIDX(frame_num)];
+    log_bs("invtakeframe %d - inserting into linked list \n", frame_num);
 
-    if(frheadE1 == SYSERR) { // DLL is empty
+    if(evicthead == SYSERR) { // DLL is empty
         frptr->fr_next = frptr->fr_prev = NULL;
-        frheadE1 = frtailE1 = frame_num; // 0 <- x -> 0
-        log_bs("allocaframe - made frame %d as start of ULL \n", frheadE1);
+        evicthead = evicttail = frame_num; // 0 <- x -> 0
+        log_bs("invtakeframe %d - made frame %d as start of ULL \n", frame_num, evicthead);
     } else { // DLL has head and tail
-        frame_t *frtailptr = &invpt[INIDX(frtailE1)];
+        frame_t *frtailptr = &invpt[INIDX(evicttail)];
         frtailptr->fr_next = frptr; // t -> x
         frptr->fr_prev = frtailptr; // t <- x
         frptr->fr_next = NULL;      // x -> 0
-        frtailE1 = frame_num;
-        log_bs("allocaframe - added frame %d to end of ULL \n", frtailE1);
+        evicttail = frame_num;
+        log_bs("invtakeframe %d - added frame %d to end of ULL \n", frame_num, evicttail);
     }
 }
 
+/*------------------------------------------------------------------------
+ *  fidxtoregion  -  Frame to Region mapping
+ *------------------------------------------------------------------------
+ */
+region fidxtoregion(fidx16 frame_num) {
+    if(FRAME0_D <= frame_num && frame_num < FRAME0_E1) {
+        return REGION_D;
+    }
+
+    if(FRAME0_E1 <= frame_num && frame_num < FRAME0_E2) {
+        return REGION_E1;
+    }
+
+    if(FRAME0_E2 <= frame_num && frame_num < FRAME0_F) {
+        return REGION_E2;
+    }
+
+    return SYSERR;
+}
 
 /*------------------------------------------------------------------------
  *  init_intpt  -  Initialize inverted page table
@@ -100,16 +121,13 @@ void init_invpt() {
 bool8 hasfreeframe(region r) {
     switch(r) {
         case REGION_D:
-            return frspD != NFRAMES_D;
-            break;
-
+            return (frspD < NFRAMES_D);
+        
         case REGION_E1:
-            return frspE1 != NFRAMES_E1;
-            break;
-
+            return (frspE1 < NFRAMES_E1);
+        
         case REGION_E2:
-            return frspE2 != NFRAMES_E2;
-            break;
+            return (frspE2 < NFRAMES_E2);
     }
 
     return SYSERR;
@@ -121,7 +139,7 @@ bool8 hasfreeframe(region r) {
  *------------------------------------------------------------------------
  */
 bool8 hasusedframeE1() {
-    return frheadE1 != SYSERR;
+    return evicthead != SYSERR;
 }
 
 
@@ -150,7 +168,7 @@ fidx16 getfreeframe(region r) {
             break;
     }
 
-    log_fr("getfreeframe %d - returning %d \n", r, retval);
+    log_bs("getfreeframe %d - returning %d \n", r, retval);
     return retval;
 }
 
@@ -161,17 +179,14 @@ fidx16 getfreeframe(region r) {
  */
 fidx16 getusedframeE1() {
     // List is empty
-    if(frheadE1 == SYSERR) {
+    if(evicthead == SYSERR) {
         return SYSERR;
     }
 
     // Front of queue
-    fidx16 retval = frheadE1;
+    fidx16 retval = evicthead;
 
-    // Remove from list
-    __remove_from_used_ll(retval);
-
-    log_fr("getusedframe - returning %d \n", r, retval);
+    log_bs("getusedframe - returning %d \n", retval);
     return retval;
 }
 
@@ -209,8 +224,7 @@ syscall invtakeframe(
     frptr->fr_pte = pte;
 
     // Add to used linked list
-    if(FRAME0_E1 <= frame_num && frame_num < FRAME0_F) {
-        log_bs("invtakeframe - detected frame %d in E1 \n", frame_num);
+    if(fidxtoregion(frame_num) == REGION_E1) {
         __insert_to_used_ll(frame_num);
     }
 
@@ -225,9 +239,7 @@ syscall invtakeframe(
  *                   invfreete the frame and add it back to stack
  *------------------------------------------------------------------------
  */
-syscall invfreeframe(
-    fidx16 frame_num
-) {
+syscall invfreeframe(fidx16 frame_num) {
     intmask mask;
     frame_t *frptr = &invpt[INIDX(frame_num)];
 
@@ -240,46 +252,53 @@ syscall invfreeframe(
     }
 
     // Try to push to correct stack
-    if(frame_num < FRAME0_E1) {
-        if(frspD == 0) {
-            log_fr("invfreeframe - cannot push %d into region D because stack is full \n", frame_num);
+    switch(fidxtoregion(frame_num)) {
+        case REGION_D:
+            if(frspD == 0) {
+                log_fr("invfreeframe - cannot push %d into region D because stack is full \n", frame_num);
+                restore(mask);
+                return SYSERR;
+            }
+
+            log_fr("dellocaframe - pushed to D \n");
+            frstackD[--frspD] = frame_num;
+            break;
+
+        case REGION_E1:
+            if(frspE1 == 0) {
+                log_fr("invfreeframe - cannot push %d into region E1 because stack is full \n", frame_num);
+                restore(mask);
+                return SYSERR;
+            }
+
+            log_fr("dellocaframe - pushed to E1 \n");
+            frstackE1[--frspE1] = frame_num;
+
+            // Remove from used link list
+            __remove_from_used_ll(frame_num);
+            break;
+
+        case REGION_E2:
+            if(frspE2 == 0) {
+                log_fr("invfreeframe - cannot push %d into region E2 because stack is full \n", frame_num);
+                restore(mask);
+                return SYSERR;
+            }
+
+            log_fr("invfreeframe - pushed to E2 \n");
+            frstackE2[--frspE2] = frame_num;
+            break;
+
+        default:
+            log_fr("invfreeframe - frame %d out of bound \n", frame_num);
             restore(mask);
             return SYSERR;
-        }
-
-        log_fr("dellocaframe - pushed to D \n");
-        frstackD[--frspD] = frame_num;
-    } else if(frame_num < FRAME0_E2) {
-        if(frspE1 == 0) {
-            log_fr("invfreeframe - cannot push %d into region E1 because stack is full \n", frame_num);
-            restore(mask);
-            return SYSERR;
-        }
-
-        log_fr("dellocaframe - pushed to E1 \n");
-        frstackE1[--frspE1] = frame_num;
-
-        // Remove from used link list
-        __remove_from_used_ll(frame_num);
-    } else if(frame_num < FRAME0_F) {
-        if(frspE2 == 0) {
-            log_fr("invfreeframe - cannot push %d into region E2 because stack is full \n", frame_num);
-            restore(mask);
-            return SYSERR;
-        }
-
-        log_fr("invfreeframe - pushed to E2 \n");
-        frstackE2[--frspE2] = frame_num;
-    } else {
-        log_fr("invfreeframe - frame %d out of bound \n", frame_num);
-        restore(mask);
-        return SYSERR;
     }
 
     // Set to free
     frptr->fr_state = FR_FREE;
 
-    log_fr("invfreeframe - deallocated frame %d \n", frame_num);
+    log_fr("invfreeframe %d %d - deallocated frame \n", frame_num, pid);
     restore(mask);
     return OK;
 }

@@ -17,6 +17,7 @@ void vmhinit(void) {
     memptr = &prptr->prmemblk; // Header contains information
     memptr->mlength = MAXHSIZE * NBPG;
     memptr->mnext = (struct memblk*) MINVHEAP;
+    log_mem("vmhinit - Set next=0x%08x length=%d \n", MINVHEAP, MAXHSIZE * NBPG);
     prptr->pralloc[VHNUM(MINVHEAP)] = TRUE;
     memptr = memptr->mnext; // First block is entire free space
     memptr->mlength = MAXHSIZE * NBPG;

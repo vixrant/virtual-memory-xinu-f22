@@ -66,15 +66,14 @@ void pgfhandler(void) {
 
     // Get state of the system
     // To select which scenario we are in
-    bool8 e1full  = !hasfreeframe(REGION_E1);
-    bool8 e2full  = !hasfreeframe(REGION_E2);
-    bool8 swapped = getpte(pgfaddr)->pt_swap;
-
+    bool8 e1full, e2full, swapped;
+    e1full  = !hasfreeframe(REGION_E1);
+    e2full  = !hasfreeframe(REGION_E2);
+    swapped = getpte(pgfaddr)->pt_swap;
     log_pgf("- E2Full=%d E1Full=%d Swapped=%d \n", e1full, e2full, swapped);
 
     // Scenarios
-    if(swapped) {
-        // Old frame is in E2
+    if(swapped) { // Old frame is in E2
         if(e1full && e2full) {
             // Swap it into E1
             swapframe();
@@ -87,12 +86,13 @@ void pgfhandler(void) {
             // Move old frame into E2
             restoreframe();
         }
-    } else {
-        // Fresh frame in E1 required
+    } else { // Fresh frame in E1 required
         while(e1full && e2full) {
             // Block until space in
             // E1 or E2
             frameblock();
+            e1full = !hasfreeframe(REGION_E1);
+            e2full = !hasfreeframe(REGION_E2);
         }
 
         if(e1full) {

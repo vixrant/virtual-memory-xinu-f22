@@ -7,45 +7,33 @@ pid32  fbqueue[NPROC];
 uint32 fbqhead = SYSERR;
 uint32 fbqtail = SYSERR;
 
-// Insert into block queue
+// Insert into block queue in circular manner
 inline syscall __insert_fbqueue(pid32 pid) {
     if(fbqhead == SYSERR) {
-        // Queue empty
-        fbqhead = fbqtail = 0;
+        fbqhead = 0;
+        fbqtail = 0;
+        fbqueue[fbqhead] = pid;
+    } else {
+        fbqtail = (fbqtail + 1) % NPROC;
+        fbqueue[fbqtail] = pid;
     }
-
-    uint16 pos = (fbqtail + 1) % NPROC;
-
-    if(pos == fbqhead) {
-        // Queue full
-        return SYSERR;
-    }
-
-    fbqueue[pos] = pid;
-    fbqtail = pos;
-
     return OK;
 }
 
-// Dequeue from block queue
+// Dequeue from block queue in circular manner
 inline pid32 __dequeue_fbqueue() {
-    if(fbqhead == SYSERR) {
-        // Queue empty
-        return SYSERR;
+    pid32 pid = SYSERR;
+    if(fbqhead != SYSERR) {
+        pid = fbqueue[fbqhead];
+        if(fbqhead == fbqtail) {
+            fbqhead = SYSERR;
+            fbqtail = SYSERR;
+        } else {
+            fbqhead = (fbqhead + 1) % NPROC;
+        }
     }
-
-    pid32 retval = fbqueue[fbqhead];
-
-    if(fbqhead == fbqtail) {
-        // retval as the only element
-        fbqhead = fbqtail = SYSERR;
-    } else {
-        fbqhead = (fbqhead + 1) % NPROC;
-    }
-
-    return retval;
+    return pid;
 }
-
 
 /*------------------------------------------------------------------------
  *  frameblock  -  Blocks a process waiting on free frames in E1 or E2
@@ -63,12 +51,11 @@ syscall frameblock() {
         return SYSERR;
     }
 
-    prptr->prstate = PR_FRBLOCK;
+    prptr->prstate = PR_FRAME;
     resched();
     restore(mask);
     return OK;
 }
-
 
 /*------------------------------------------------------------------------
  *  framewakeup  -  Wakes up processes waiting on free frames in E1 or E2

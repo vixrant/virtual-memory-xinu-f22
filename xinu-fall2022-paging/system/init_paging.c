@@ -60,5 +60,6 @@ void init_paging(void) {
     set_evec(14, (uint32) pgfdisp);
 
     // 6. Enable paging
+    pagingenable();
     log_init("paginginit - enabled paging \n");
 }

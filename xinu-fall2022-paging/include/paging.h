@@ -88,7 +88,7 @@ typedef struct {
 #define FR_FREE 0 /* frame is free */
 #define FR_USED 1 /* frame is used for directory */
 
-#define FR_PGUNUSED -1 /* for invtakeframe, when pgnum field is unused */
+#define FR_PTEUNUSED (pt_t*) -1 /* for invtakeframe, when pgnum field is unused */
 
 #define fidx16 int16
 
@@ -104,7 +104,7 @@ typedef struct invptent {
 extern frame_t invpt[NFRAMES];  /* inverted page table
                                  * for regions D, E1, E2 */
 
-extern fidx16 frheadE1, frtailE1; /* head and tail
+extern fidx16 evicthead, frtailE1; /* head and tail
                                    * for FIFO replacement policy */
 
 /* Identity maps for regions A, B, C, D, E1, E2, G */
@@ -136,8 +136,9 @@ extern uint32 pgfaddr; /* Faulty address */
 extern pd_t *newpd(pid32);
 extern pt_t *newpt(pid32);
 
-/* in file invpt.c */
+/* in file framemgmt.c */
 extern void    init_invpt();
+extern region  fidxtoregion(fidx16);
 extern bool8   hasfreeframe(region);
 extern bool8   hasusedframeE1();
 extern fidx16  getfreeframe(region);

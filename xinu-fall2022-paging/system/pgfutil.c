@@ -15,6 +15,7 @@
  *------------------------------------------------------------------------
  */
 fidx16 mapfreeframe() {
+    log_bs("- Mapping new E1 frame to faulting address \n");
     fidx16 frame_num = SYSERR;
     pt_t *pte = getpte(pgfaddr);
 
@@ -28,7 +29,7 @@ fidx16 mapfreeframe() {
     invtakeframe(frame_num, currpid, pte);
 
     // 3. Map page to frame
-    log_pgf("- Mapping %d -> %d \n", PGNUM(pgfaddr), frame_num);
+    log_bs("- Mapped %d -> %d \n", PGNUM(pgfaddr), frame_num);
     pte->pt_pres  = 1;
     pte->pt_write = 1;
     pte->pt_swap  = 0;
@@ -54,16 +55,19 @@ fidx16 mapfreeframe() {
  *------------------------------------------------------------------------
  */
 fidx16 restoreframe() {
-    // 1. Get free frame in E1
+    log_bs("- Restoring old E2 frame of faulting address \n");
+
+    // 1. Get backup frame in E2
+    pt_t *pte = getpte(pgfaddr);
+    fidx16 src = pte->pt_base;
+    log_bs("- Restoring old frame to ");
+
+    // 2. Get free frame in E1
     fidx16 dest = getfreeframe(REGION_E1);
     if(dest == SYSERR) {
         log_bs("restoreframe - no free frame in E1 \n");
         return SYSERR;
     }
-
-    // 2. Get backup frame in E2
-    pt_t *pte = getpte(pgfaddr);
-    fidx16 src = pte->pt_base;
 
     // 3. Occupy destination frame
     invtakeframe(dest, currpid, pte);
@@ -104,40 +108,46 @@ fidx16 restoreframe() {
  *------------------------------------------------------------------------
  */
 syscall evictframe() {
-    // 1. Get destination frame in E2
-    fidx16 dest = getfreeframe(REGION_E2);
-    if(dest == SYSERR) {
-        log_bs("evictframe - no free frames in E2 \n");
+    log_bs("- Evicting an E1 frame to E2 \n");
+
+    // 1. Get source frame in E1 from FIFO list
+    fidx16 victim = getusedframeE1();
+    if(victim == SYSERR) {
+        log_bs("-- No frames to evict \n");
         return SYSERR;
     }
 
-    // 2. Get source frame in E1 from FIFO list
-    fidx16 victim = getusedframeE1();
-    if(victim == SYSERR) {
-        log_bs("evictframe - no frames to evict \n");
+    // 2. Get destination frame in E2
+    fidx16 dest = getfreeframe(REGION_E2);
+    if(dest == SYSERR) {
+        log_bs("-- No free frames in E2 \n");
         return SYSERR;
     }
 
     frame_t *vptr = &invpt[INIDX(victim)];
+    log_bs("-- Selected victim %d --> destination %d \n", victim, dest);
 
     // 3. Victim occpies E2 frame
     invtakeframe(dest, vptr->fr_pid, vptr->fr_pte);
 
     // 4. Copy victim -> destination
     uint16 i;
-    char *vaddr = (char*) (victim * NBPG);
-    char *daddr = (char*) (dest * NBPG);
+    unsigned char *vaddr = (unsigned char*) (victim * NBPG);
+    unsigned char *daddr = (unsigned char*) (dest   * NBPG);
     for(i=0 ; i<NBPG ; i++) {
         daddr[i] = vaddr[i];
     }
+    log_bs("-- Copied destination 0x%08x <-- victim 0x%08x \n", daddr, vaddr);
 
     // 5. Mark victim's PTE as swapped, absent, new location
     pt_t *vpte = vptr->fr_pte;
-    if(vpte != (pt_t*) FR_PGUNUSED) {
+    if(vpte != FR_PTEUNUSED) {
+        log_bs("-- Changed PTE from 0x%08x ", vpte);
         vpte->pt_pres  = 0;
         vpte->pt_write = 0;
         vpte->pt_swap  = 1;
         vpte->pt_base  = dest;
+        log_bs("to 0x%08x \n", vpte);
     }
 
     // 6. Victim gives up E1 frame
@@ -164,17 +174,18 @@ syscall evictframe() {
  *------------------------------------------------------------------------
  */
 syscall swapframe() {
+    log_bs("- Swap an E1 frame with old E2 frame of faulting process \n");
+
     fidx16 frame_num; // Frame numbers in E2 and E1
-    char *addr; // Base addresses in E2 and E1
     uint16 i; // Iterator
-    char temp[NBPG]; // Temperory store
+    static char temp[NBPG]; // Temperory store
 
     // 1. Copy all bytes of E2 into temp storage
     pt_t *pte = getpte(pgfaddr);
     frame_num = pte->pt_base;
-    addr = (char*) (frame_num * NBPG);
+    char *saddr = (char*) (frame_num * NBPG); // E2 source
     for(i=0 ; i<NBPG ; i++) {
-        temp[i] = addr[i];
+        temp[i] = saddr[i];
     }
 
     // 2. Give up swapped E2 frame
@@ -187,9 +198,9 @@ syscall swapframe() {
     frame_num = mapfreeframe(); // E1 frame id
 
     // 5. Copy all bytes of temp storage into new E1 frame
-    addr = (char*) (frame_num * NBPG); // E1 frame base address
+    char *daddr = (char*) (frame_num * NBPG); // E1 destination
     for(i=0 ; i<NBPG ; i++) {
-        addr[i] = temp[i];
+        daddr[i] = temp[i];
     }
 
     return OK;
