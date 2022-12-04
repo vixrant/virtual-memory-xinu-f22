@@ -164,7 +164,7 @@ syscall evictframe() {
  *------------------------------------------------------------------------
  */
 syscall swapframe() {
-    log_bs("- Swap an E1 frame with old E2 frame of faulting process \n");
+    log_pgf("- Swap an E1 frame with old E2 frame of faulting process \n");
 
     fidx16 frame_num; // Frame numbers in E2 and E1
     uint16 i; // Iterator
@@ -177,6 +177,7 @@ syscall swapframe() {
     for(i=0 ; i<NBPG ; i++) {
         temp[i] = saddr[i];
     }
+    log_bs("-- Copied temp <-- source 0x%08x \n", saddr);
 
     // 2. Give up swapped E2 frame
     invfreeframe(frame_num);
@@ -192,6 +193,7 @@ syscall swapframe() {
     for(i=0 ; i<NBPG ; i++) {
         daddr[i] = temp[i];
     }
+    log_bs("-- Copied destination 0x%08x <-- temp \n", daddr);
 
     return OK;
 }

@@ -39,10 +39,11 @@ syscall	kill(
 	}
 	freestk(prptr->prstkbase, prptr->prstklen);
 
+	framewakeup(); // Wakeup processes waiting for frames
+
 	switch (prptr->prstate) {
 	case PR_CURR:
 		prptr->prstate = PR_FREE;	/* Suicide */
-		framewakeup(); // Wakeup processes waiting for frames
 		resched();
 
 	case PR_SLEEP:
@@ -63,7 +64,6 @@ syscall	kill(
 		prptr->prstate = PR_FREE;
 	}
 
-	framewakeup(); // Wakeup processes waiting for frames
 	restore(mask);
 	return OK;
 }
