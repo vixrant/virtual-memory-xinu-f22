@@ -68,6 +68,7 @@ inline void __insert_to_used_ll(fidx16 frame_num) {
     }
 }
 
+
 /*------------------------------------------------------------------------
  *  fidxtoregion  -  Frame to Region mapping
  *------------------------------------------------------------------------
@@ -247,6 +248,7 @@ syscall invfreeframe(fidx16 frame_num) {
 
     if(frptr->fr_state == FR_FREE) {
         // No action required
+        log_fr("invfreeframe - frame %d is already free \n", frame_num);
         restore(mask);
         return OK;
     }

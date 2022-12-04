@@ -37,7 +37,7 @@ void pgfhandler(void) {
     log_pgf("- Error code: 0x%x \n", pgferr);
     log_pgf("- Errorneous address: 0x%x \n", pgfaddr);
     log_pgf("- Allocated: %d \n", prptr->pralloc[VHNUM(pgfaddr)]);
-    log_pgf("- Page number: 0x%x \n", PGNUM(pgfaddr));
+    log_pgf("- Page number: %d \n", PGNUM(pgfaddr));
     log_pgf("- PDIDX: 0x%x \n", PDIDX(pgfaddr));
     log_pgf("- PTIDX: 0x%x \n", PTIDX(pgfaddr));
 

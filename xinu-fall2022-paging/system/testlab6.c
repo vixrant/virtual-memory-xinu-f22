@@ -96,7 +96,40 @@ void test_evictframe() {
     pdf("@ x = %s \n", x);
 }
 
-void test_restoreframe() {
+void test_evictframe_restoreframe() {
     // Scenario: E2 has the frame that we want to restore
     pdf("----- TEST RESTOREFRAME ----- \n");
+
+    char *x, *y;
+    uint32 i;
+
+    pdf("@ Requesting one page \n");
+    x = vmhgetmem(1);
+    for(i=0; i<NBPG; i++) {
+        if(i < 10)  x[i] = 'a';
+        else        x[i] = '\0';
+    }
+    pdf("@ x = %s \n", x);
+    pdf("@ x is mapped to frame %d \n", getframenum(x));
+
+    pdf("@ Setting all frames in E1 to occupied by null \n");
+    for(i=0 ; i<NFRAMES_E1 ; i++) {
+        fidx16 f = getfreeframe(REGION_E1);
+        invtakeframe(f, NULLPROC, FR_PTEUNUSED);
+    }
+
+    pdf("@ Requesting one more page \n");
+    y = vmhgetmem(1);
+
+    pdf("@ Accessing preserved page \n");
+    y = 0x00be8000;
+    pdf("@ y = %s \n", y);
+
+    pdf("@ Accessing old location again \n");
+    for(i=0; i<10; i++) {
+        x[i] = 'b';
+    }
+    pdf("@ x is mapped to frame %d \n", getframenum(x));
+    pdf("@ printing 2025 frame: %s \n", (2025 << 12));
+    pdf("@ x = %s \n", x);
 }

@@ -9,6 +9,7 @@
         .globl  pgfdisp         # Page fault interrupt dispatcher
 pgfdisp:
         pushal          # Save registers
+        pushal          # Save registers
         cli             # Disable further interrupts
 
         // Copy errorneous address
@@ -22,6 +23,7 @@ pgfdisp:
         call    pgfhandler  # Call high level handler
 
         sti             # Restore interrupt status
+        popal           # Restore registers
         popal           # Restore registers
         addl    $4, %esp # Discard error code
         iret            # Return from interrupt

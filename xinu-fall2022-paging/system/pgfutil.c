@@ -48,10 +48,9 @@ fidx16 mapfreeframe() {
  *
  *  Actions:
  *  - Gets E2 frame that contains faulting page's old data
- *  - Occupies a free frame in E1
+ *  - Map a free frame in E1
  *  - Copies E2 frame data into temporory storage
  *  - Frees the E2 frame
- *  - Map faulting page's PTE to E1 frame
  *------------------------------------------------------------------------
  */
 fidx16 restoreframe() {
@@ -60,35 +59,26 @@ fidx16 restoreframe() {
     // 1. Get backup frame in E2
     pt_t *pte = getpte(pgfaddr);
     fidx16 src = pte->pt_base;
-    log_bs("- Restoring old frame to ");
 
     // 2. Get free frame in E1
-    fidx16 dest = getfreeframe(REGION_E1);
+    fidx16 dest = mapfreeframe();
     if(dest == SYSERR) {
-        log_bs("restoreframe - no free frame in E1 \n");
+        log_bs("- Restoreframe failed in mapping free frame in E1 \n");
         return SYSERR;
     }
+    log_bs("-- Restoring %d -> %d \n", src, dest);
 
-    // 3. Occupy destination frame
-    invtakeframe(dest, currpid, pte);
-    pte = getpte(pgfaddr);
-
-    // 4. Copy all bytes of E2 into E1
+    // 3. Copy all bytes of E2 into E1
     uint16 i;
-    char *saddr = (char*) (src * NBPG);
-    char *daddr = (char*) (dest * NBPG);
+    unsigned char *saddr = (unsigned char*) (src * NBPG);
+    unsigned char *daddr = (unsigned char*) (dest * NBPG);
     for(i=0 ; i<NBPG ; i++) {
         daddr[i] = saddr[i];
     }
+    log_bs("-- Copied destination 0x%08x <-- source 0x%08x \n", daddr, saddr);
 
-    // 5. Give up backup frame
+    // 4. Give up backup frame
     invfreeframe(src);
-
-    // 6. Mark faulting page's PTE as unswapped, present, new location
-    pte->pt_pres  = 1;
-    pte->pt_write = 1;
-    pte->pt_swap  = 0;
-    pte->pt_base  = dest;
 
     return OK;
 }
@@ -133,7 +123,7 @@ syscall evictframe() {
     // 4. Copy victim -> destination
     uint16 i;
     unsigned char *vaddr = (unsigned char*) (victim * NBPG);
-    unsigned char *daddr = (unsigned char*) (dest   * NBPG);
+    unsigned char *daddr = (unsigned char*) (dest * NBPG);
     for(i=0 ; i<NBPG ; i++) {
         daddr[i] = vaddr[i];
     }

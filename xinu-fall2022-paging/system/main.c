@@ -10,6 +10,7 @@ extern void testtwoproc1();
 
 extern void test_mapfreeframe();
 extern void test_evictframe();
+extern void test_evictframe_restoreframe();
 
 //*MAIN***********************************************************************/
 
@@ -22,8 +23,9 @@ process	main(void)
 	/* resume(create(testfreemem2,  INITSTK, INITPRIO + 10, "Test", 0)); */
 	/* resume(create(testtwoproc1,  INITSTK, INITPRIO + 10, "Test", 0)); */
 
-	/* resume(create(test_mapfreeframe,  INITSTK, INITPRIO + 10, "Test", 0)); */
-	resume(create(test_evictframe,  INITSTK, INITPRIO + 10, "Test", 0));
+	/* resume(create(test_mapfreeframe, INITSTK, INITPRIO + 10, "Test", 0)); */
+	// resume(create(test_evictframe, INITSTK, INITPRIO + 10, "Test", 0));
+	resume(create(test_evictframe_restoreframe, INITSTK, INITPRIO + 10, "Test", 0));
 	#endif
 
 	return OK;

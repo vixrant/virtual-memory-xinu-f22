@@ -3,7 +3,7 @@
 #if XINUDEBUG
 #define DEBUG_INI 0
 #define DEBUG_FR  0
-#define DEBUG_MEM 1
+#define DEBUG_MEM 0
 #define DEBUG_PGF 1
 #define DEBUG_BS  1
 #endif
