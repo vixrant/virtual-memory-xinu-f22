@@ -27,13 +27,15 @@ fidx16 mapfreeframe() {
 
     // 2. Occupy frame
     invtakeframe(frame_num, currpid, pte);
+    log_bs("- New frame %d is now occupied by %d \n", frame_num, currpid);
 
     // 3. Map page to frame
-    log_bs("- Mapped %d -> %d \n", PGNUM(pgfaddr), frame_num);
+    log_bs("-- Change PTE from 0x%08x ", *pte);
     pte->pt_pres  = 1;
     pte->pt_write = 1;
     pte->pt_swap  = 0;
     pte->pt_base  = frame_num;
+    log_bs("to 0x%08x \n", *pte);
 
     return frame_num;
 }
@@ -132,12 +134,12 @@ syscall evictframe() {
     // 5. Mark victim's PTE as swapped, absent, new location
     pt_t *vpte = vptr->fr_pte;
     if(vpte != FR_PTEUNUSED) {
-        log_bs("-- Changed PTE from 0x%08x ", vpte);
+        log_bs("-- Changed PTE from 0x%08x ", *vpte);
         vpte->pt_pres  = 0;
         vpte->pt_write = 0;
         vpte->pt_swap  = 1;
         vpte->pt_base  = dest;
-        log_bs("to 0x%08x \n", vpte);
+        log_bs("to 0x%08x \n", *vpte);
     }
 
     // 6. Victim gives up E1 frame
@@ -164,7 +166,7 @@ syscall evictframe() {
  *------------------------------------------------------------------------
  */
 syscall swapframe() {
-    log_pgf("- Swap an E1 frame with old E2 frame of faulting process \n");
+    log_pgf("- Swap an E1 frame with old E2 frame of faulting address \n");
 
     fidx16 frame_num; // Frame numbers in E2 and E1
     uint16 i; // Iterator

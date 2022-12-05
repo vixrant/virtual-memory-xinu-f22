@@ -8,8 +8,8 @@
 
 /* Inverted page table */
 frame_t invpt[NFRAMES];
-fidx16 evicthead = SYSERR;
-fidx16 evicttail = SYSERR;
+frame_t *evicthead = (frame_t*) NULL;
+frame_t *evicttail = (frame_t*) NULL;
 
 fidx16 frstackD[NFRAMES_D];
 int16  frspD;
@@ -23,27 +23,27 @@ int16  frspE2;
 // Remove frame from E1's linked list
 inline void __remove_from_used_ll(fidx16 frame_num) {
     frame_t *frptr = &invpt[INIDX(frame_num)];
-    log_bs("invfreeframe %d - removing from linked list \n", frame_num);
 
-    if(evicthead == frame_num && evicttail == frame_num) {
-        // Only one node in linked list
-        evicthead = evicttail = SYSERR;
-        log_bs("invfreeframe %d - deleted linked list \n", frame_num);
-    } else if(evicthead == frame_num) {
-        // Invfree head
-        evicthead = frptr->fr_next->fr_idx;
-        frptr->fr_next->fr_prev = NULL;
-        log_bs("invfreeframe %d - moved head to %d \n", frame_num, evicthead);
-    } else if(evicttail == frame_num) {
-        // Invfree tail
-        evicttail = frptr->fr_prev->fr_idx;
-        frptr->fr_prev->fr_next = NULL;
-        log_bs("invfreeframe %d - moved tail to %d \n", frame_num, evicttail);
-    } else {
-        // Invfree a middle node
+     /* Remove the frame from the list */
+    if (frptr->fr_prev != NULL) {
         frptr->fr_prev->fr_next = frptr->fr_next;
+    }
+
+    if (frptr->fr_next != NULL) {
         frptr->fr_next->fr_prev = frptr->fr_prev;
-        log_bs("invfreeframe %d - deleted middle node \n", frame_num);
+    }
+
+    log_fr("invfreeframe %d - removed from linked list \n", frame_num);
+    
+    /* Update the head and tail pointers if necessary */
+    if (frptr == evicthead) {
+        evicthead = frptr->fr_next;
+        log_fr("invfreeframe %d - moved evicthead to \n", frame_num, evicthead->fr_idx);
+    }
+
+    if (frptr == evicttail) {
+        evicttail = frptr->fr_prev;
+        log_fr("invfreeframe %d - moved evicttail to \n", frame_num, evicttail->fr_idx);
     }
 
     frptr->fr_next = frptr->fr_prev = NULL;
@@ -52,19 +52,21 @@ inline void __remove_from_used_ll(fidx16 frame_num) {
 // Add frame to E1's linked list in FIFO
 inline void __insert_to_used_ll(fidx16 frame_num) {
     frame_t *frptr = &invpt[INIDX(frame_num)];
-    log_bs("invtakeframe %d - inserting into linked list \n", frame_num);
+    log_fr("invtakeframe %d - inserting into linked list \n", frame_num);
 
-    if(evicthead == SYSERR) { // DLL is empty
-        frptr->fr_next = frptr->fr_prev = NULL;
-        evicthead = evicttail = frame_num; // 0 <- x -> 0
-        log_bs("invtakeframe %d - made frame %d as start of ULL \n", frame_num, evicthead);
-    } else { // DLL has head and tail
-        frame_t *frtailptr = &invpt[INIDX(evicttail)];
-        frtailptr->fr_next = frptr; // t -> x
-        frptr->fr_prev = frtailptr; // t <- x
-        frptr->fr_next = NULL;      // x -> 0
-        evicttail = frame_num;
-        log_bs("invtakeframe %d - added frame %d to end of ULL \n", frame_num, evicttail);
+    /* Insert the frame at the tail of the list */
+    frptr->fr_prev = evicttail;
+    frptr->fr_next = NULL;
+    if (evicttail != NULL) {
+        evicttail->fr_next = frptr;
+    }
+    evicttail = frptr;
+    log_fr("invtakeframe %d - added frame %d to end of ULL \n", frame_num, evicttail);
+    
+    /* Update the head of the list if necessary */
+    if (evicthead == NULL) {
+        evicthead = frptr;
+        log_fr("invtakeframe %d - made frame %d as head of ULL \n", frame_num, evicthead);
     }
 }
 
@@ -140,7 +142,7 @@ bool8 hasfreeframe(region r) {
  *------------------------------------------------------------------------
  */
 bool8 hasusedframeE1() {
-    return evicthead != SYSERR;
+    return evicthead != NULL;
 }
 
 
@@ -169,7 +171,7 @@ fidx16 getfreeframe(region r) {
             break;
     }
 
-    log_bs("getfreeframe %d - returning %d \n", r, retval);
+    log_fr("getfreeframe %d - returning %d \n", r, retval);
     return retval;
 }
 
@@ -180,14 +182,14 @@ fidx16 getfreeframe(region r) {
  */
 fidx16 getusedframeE1() {
     // List is empty
-    if(evicthead == SYSERR) {
+    if(evicthead == NULL) {
         return SYSERR;
     }
 
     // Front of queue
-    fidx16 retval = evicthead;
+    fidx16 retval = evicthead->fr_idx;
 
-    log_bs("getusedframe - returning %d \n", retval);
+    log_fr("getusedframe - returning %d \n", retval);
     return retval;
 }
 
@@ -300,7 +302,7 @@ syscall invfreeframe(fidx16 frame_num) {
     // Set to free
     frptr->fr_state = FR_FREE;
 
-    log_fr("invfreeframe %d %d - deallocated frame \n", frame_num, pid);
+    log_fr("invfreeframe %d - deallocated frame \n", frame_num);
     restore(mask);
     return OK;
 }

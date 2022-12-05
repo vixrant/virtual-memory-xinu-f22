@@ -15,29 +15,28 @@ static void __set_pages_deallocated(
 
     for(i=0 ; i<msize ; i++) {
         uint32 addr = ((uint32) blkaddr) + (i * NBPG);
-        log_fr("vmhfreemem - deallocating 0x%08x \n", addr);
+        log_mem("vmhfreemem - deallocating 0x%08x \n", addr);
         if(i == 0 && skipfirst) {
-            log_fr("vmhfreemem - skipping link node \n");
+            log_mem("vmhfreemem - skipping link node \n");
             continue;
         }
         // Set unallocated in process cell
-        log_fr("vmhfreemem - setting %d as deallocated \n", VHNUM(addr));
+        log_mem("vmhfreemem - setting %d as deallocated \n", VHNUM(addr));
         prptr->pralloc[VHNUM(addr)] = FALSE;
         // Get PTE
         pt_t *pte = getpte(addr);
-        if(pte->pt_pres == 1) {
-            log_fr("vmhfreemem - 0x%08x maps to frame %d \n", addr, getframenum(addr));
-            // Mark as absent
+        if(pte->pt_pres == 1 || pte->pt_swap == 1) {
+            log_mem("vmhfreemem - 0x%08x maps to frame %d \n", addr, getframenum(addr));
+            // Mark as absent, unswapped
             pte->pt_pres = 0;
+            pte->pt_swap = 0;
+            log_mem("vmhfreemem - marked PTE %d absent, unswappd \n", *pte);
+            // Invalidate TLB 
             asm volatile("invlpg (%0)" :: "r" (addr) : "memory");
-            log_fr("vmhfreemem - marked PTE %d absent \n", *pte);
             // Get frame mapping
             fidx16 frame_num = pte->pt_base;
             // Mark the frame as free in inverted page table
             // Add back to its stack
-            if(invpt[INIDX(frame_num)].fr_pid != currpid) {
-                kprintf("Error in code: Deallocating frame belonging to %d that does not belong to %d \n", invpt[INIDX(frame_num)].fr_pid, currpid);
-            }
             invfreeframe(frame_num);
         }
     }
@@ -64,8 +63,18 @@ syscall     vmhfreemem(
     if ((nbytes == 0) || ((uint32) blkaddr < MINVHEAP)
               || ((uint32) blkaddr > MAXVHEAP)) {
         restore(mask);
-        log_mem("vmhfreemem - Out of bounds?? \n");
         return SYSERR;
+    }
+
+    // Check if all msize pages are allocated
+    uint16 i;
+    for(i=0 ; i<msize ; i++) {
+        uint32 addr = ((uint32) blkaddr) + (i * NBPG);
+        if(prptr->pralloc[VHNUM(addr)] == 0) {
+            log_mem("vmhfreemem - page %d is not allocated \n", VHNUM(addr));
+            restore(mask);
+            return SYSERR;
+        }
     }
 
     block = (struct memblk *)blkaddr;
@@ -116,6 +125,7 @@ syscall     vmhfreemem(
         block->mnext = next->mnext;
     }
 
+    log_mem("vmhfreemem - freed %d pages at 0x%08x \n", msize, blkaddr);
     framewakeup(); // Wakeup processes waiting for frames
 
     restore(mask);

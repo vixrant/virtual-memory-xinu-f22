@@ -73,7 +73,7 @@ typedef struct {
 #define MAXHSIZE 1024
 
 #define MINVHEAP (FRAME0_VF * NBPG)
-#define MAXVHEAP ((FRAME0_VF + MAXHSIZE) * NBPG - 1)
+#define MAXVHEAP ((FRAME0_VF + MAXHSIZE) * NBPG)
 
 /* Macro expressions */
 
@@ -95,17 +95,14 @@ typedef struct {
 typedef struct invptent {
   pid32            fr_pid;          /* owner of frame */
   fidx16           fr_idx;          /* index of frame for link list */
-  struct invptent  *fr_next;         /* next node in used LL */
-  struct invptent  *fr_prev;         /* prev node in used LL  */
+  struct invptent  *fr_next;        /* next node in used LL */
+  struct invptent  *fr_prev;        /* prev node in used LL  */
   unsigned int     fr_state : 1;    /* state of frame */
   pt_t             *fr_pte;
 } frame_t;
 
 extern frame_t invpt[NFRAMES];  /* inverted page table
                                  * for regions D, E1, E2 */
-
-extern fidx16 evicthead, frtailE1; /* head and tail
-                                   * for FIFO replacement policy */
 
 /* Identity maps for regions A, B, C, D, E1, E2, G */
 extern pt_t *identity_pt[5];

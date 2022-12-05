@@ -24,12 +24,7 @@ inline void __pde_inv_check() {
     }
 }
 
-
-/*------------------------------------------------------------------------
- * pgfhandler - high level page fault interrupt handler
- *------------------------------------------------------------------------
- */
-void pgfhandler(void) {
+void __debug_pgf() {
     struct procent *prptr = &proctab[currpid];
 
     log_pgf("----- PAGE FAULT ----- \n");
@@ -38,8 +33,19 @@ void pgfhandler(void) {
     log_pgf("- Errorneous address: 0x%x \n", pgfaddr);
     log_pgf("- Allocated: %d \n", prptr->pralloc[VHNUM(pgfaddr)]);
     log_pgf("- Page number: %d \n", PGNUM(pgfaddr));
-    log_pgf("- PDIDX: 0x%x \n", PDIDX(pgfaddr));
-    log_pgf("- PTIDX: 0x%x \n", PTIDX(pgfaddr));
+    log_pgf("- PDIDX: %d \n", PDIDX(pgfaddr));
+    log_pgf("- PTIDX: %d \n", PTIDX(pgfaddr));
+}
+
+
+/*------------------------------------------------------------------------
+ * pgfhandler - high level page fault interrupt handler
+ *------------------------------------------------------------------------
+ */
+void pgfhandler(void) {
+    struct procent *prptr = &proctab[currpid];
+
+    __debug_pgf();
 
     // Check if error was caused due to access violation issue
     if(pgferr.pgf_pres == 1) {
@@ -77,31 +83,35 @@ void pgfhandler(void) {
         if(e1full && e2full) {
             // Swap it into E1
             swapframe();
+        } else if(e1full) {
+            // Make space in E1 and restore
+            evictframe();
+            restoreframe();
         } else {
-            if(e1full) {
-                // Make space in E1
-                evictframe();
-            }
-
-            // Move old frame into E2
+            // Restore it into E1
             restoreframe();
         }
     } else { // Fresh frame in E1 required
         while(e1full && e2full) {
             // Block until space in
             // E1 or E2
+            log_pgf("- Blocking \n");
+            log_pgf("----- ---------- ----- \n");
             frameblock();
+            __debug_pgf();
+            log_pgf("- Unblocked from frame block! \n");
             e1full = !hasfreeframe(REGION_E1);
             e2full = !hasfreeframe(REGION_E2);
         }
 
         if(e1full) {
-            // Make space in E1
+            // Make space in E1 and assign new frame
             evictframe();
+            mapfreeframe();
+        } else {
+            // Assign new frame directly
+            mapfreeframe();
         }
-
-        // Assign a new frame
-        mapfreeframe();
     }
 
     log_pgf("----- ---------- ----- \n");
