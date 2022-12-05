@@ -2,10 +2,10 @@
 
 #if XINUDEBUG
 #define DEBUG_INI 0
-#define DEBUG_FR  1
+#define DEBUG_FR  0
 #define DEBUG_MEM 0
-#define DEBUG_PGF 1
-#define DEBUG_BS  1
+#define DEBUG_PGF 0
+#define DEBUG_BS  0
 #endif
 
 #if XINUDEBUG

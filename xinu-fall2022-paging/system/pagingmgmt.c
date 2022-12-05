@@ -1,6 +1,23 @@
-/* pagingmgmt.c - newpd, newpt */
+/* pagingmgmt.c - newpd, newpt, deletept */
 
 #include <xinu.h>
+
+/*------------------------------------------------------------------------
+ *  deletept -  Deletes a page directory entry and frees its frame
+ *------------------------------------------------------------------------
+ */
+void deletept(pd_t *pde) {
+    log_mem("deletept - deleting PT at frame %d \n", pt_frame_num);
+    
+    // Get frame of page table
+    fidx16 frame_num = pde->pd_base;
+
+    // Free frame
+    invfreeframe(frame_num);
+
+    // Mark page table as not present
+    pde->pd_pres = 0;
+}
 
 /*------------------------------------------------------------------------
  *  newpt  -  Create a new Page Table in Region D, returning pointer

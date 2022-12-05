@@ -78,10 +78,10 @@ typedef struct {
 /* Macro expressions */
 
 #define INIDX(x) (x) - FRAME0
-#define VHNUM(x) (x >> 12) - FRAME0_VF
-#define PGNUM(x) (x >> 12)
-#define PDIDX(x) (x >> 22)
-#define PTIDX(x) (x >> 12) & 1023
+#define VHNUM(a) (a >> 12) - FRAME0_VF
+#define PGNUM(a) (a >> 12)
+#define PDIDX(a) (a >> 22)
+#define PTIDX(a) (a >> 12) & 1023
 
 /* Structure for an inverted page table entry */
 
@@ -95,10 +95,11 @@ typedef struct {
 typedef struct invptent {
   pid32            fr_pid;          /* owner of frame */
   fidx16           fr_idx;          /* index of frame for link list */
+  unsigned int     fr_state;        /* state of frame */
+  int              fr_refcnt;       /* reference count */
+  pt_t             *fr_pte;         /* page table entry */
   struct invptent  *fr_next;        /* next node in used LL */
   struct invptent  *fr_prev;        /* prev node in used LL  */
-  unsigned int     fr_state : 1;    /* state of frame */
-  pt_t             *fr_pte;
 } frame_t;
 
 extern frame_t invpt[NFRAMES];  /* inverted page table
@@ -130,6 +131,7 @@ extern uint32 pgfaddr; /* Faulty address */
 /* Prototypes required for paging */
 
 /* in file pagingmgmt.c */
+extern void deletept(pd_t*);
 extern pd_t *newpd(pid32);
 extern pt_t *newpt(pid32);
 

@@ -1,7 +1,8 @@
 /* framemgmt.c - init_invpt,
  *               hasfreeframe, hasusedframeE1,
  *               getfreeframe, getusedframeE1,
- *               invtakeframe, invfreeframe
+ *               invtakeframe, invfreeframe,
+ *               decrrefcnt, incrrefcnt
  */
 
 #include <xinu.h>
@@ -101,6 +102,7 @@ void init_invpt() {
     for(i=0 ; i<NFRAMES ; i++) {
         invpt[i].fr_idx = i + FRAME0; // list indexes
         invpt[i].fr_state = FR_FREE; // all frames free
+        invpt[i].fr_refcnt = 0; // no references
         invpt[i].fr_next = invpt[i].fr_prev = NULL; // linked list
     }
 

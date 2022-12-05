@@ -27,7 +27,7 @@ fidx16 mapfreeframe() {
 
     // 2. Occupy frame
     invtakeframe(frame_num, currpid, pte);
-    log_bs("- New frame %d is now occupied by %d \n", frame_num, currpid);
+    log_bs("-- New frame %d is now occupied by %d \n", frame_num, currpid);
 
     // 3. Map page to frame
     log_bs("-- Change PTE from 0x%08x ", *pte);

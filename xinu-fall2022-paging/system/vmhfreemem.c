@@ -23,21 +23,37 @@ static void __set_pages_deallocated(
         // Set unallocated in process cell
         log_mem("vmhfreemem - setting %d as deallocated \n", VHNUM(addr));
         prptr->pralloc[VHNUM(addr)] = FALSE;
-        // Get PTE
+        // Get PTE and PDE
         pt_t *pte = getpte(addr);
+        pd_t *pde = getpde(addr);
         if(pte->pt_pres == 1 || pte->pt_swap == 1) {
             log_mem("vmhfreemem - 0x%08x maps to frame %d \n", addr, getframenum(addr));
+
             // Mark as absent, unswapped
             pte->pt_pres = 0;
             pte->pt_swap = 0;
             log_mem("vmhfreemem - marked PTE %d absent, unswappd \n", *pte);
+
             // Invalidate TLB 
             asm volatile("invlpg (%0)" :: "r" (addr) : "memory");
+
             // Get frame mapping
             fidx16 frame_num = pte->pt_base;
+
             // Mark the frame as free in inverted page table
             // Add back to its stack
             invfreeframe(frame_num);
+
+            // // Get frame of PT
+            // fidx16 pt_frame_num = pde->pd_base;
+            // // Decrease the reference count of the PT
+            // invpt[INIDX(pt_frame_num)].fr_refcnt--;
+            // log_mem("vmhfreemem - decreased refcnt of PT at frame %d to %d \n", pt_frame_num, invpt[INIDX(pt_frame_num)].fr_refcnt);
+            // // Delete PT if no more references
+            // if(invpt[INIDX(pt_frame_num)].fr_refcnt <= 0) {
+            //     log_mem("WOULD HAVE PREFERRED TO DELETE PT HERE BUT I DONT KNOW WHERE TO INCREMENT REFERENCE COUNT ADASDSAHDASHDASHDASHDASHDAS \n");
+            //     // deletept(pde);
+            // }
         }
     }
 }
@@ -60,6 +76,7 @@ syscall     vmhfreemem(
     vmhinit(); // Initialize vheap if not done already
 
     mask = disable();
+    // No memory to free, or invalid address
     if ((nbytes == 0) || ((uint32) blkaddr < MINVHEAP)
               || ((uint32) blkaddr > MAXVHEAP)) {
         restore(mask);
