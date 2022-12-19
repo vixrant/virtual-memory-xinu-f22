@@ -7,8 +7,6 @@
  *------------------------------------------------------------------------
  */
 void deletept(pd_t *pde) {
-    log_mem("deletept - deleting PT at frame %d \n", pt_frame_num);
-    
     // Get frame of page table
     fidx16 frame_num = pde->pd_base;
 

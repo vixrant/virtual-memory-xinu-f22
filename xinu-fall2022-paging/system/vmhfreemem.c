@@ -44,16 +44,16 @@ static void __set_pages_deallocated(
             // Add back to its stack
             invfreeframe(frame_num);
 
-            // // Get frame of PT
-            // fidx16 pt_frame_num = pde->pd_base;
-            // // Decrease the reference count of the PT
-            // invpt[INIDX(pt_frame_num)].fr_refcnt--;
-            // log_mem("vmhfreemem - decreased refcnt of PT at frame %d to %d \n", pt_frame_num, invpt[INIDX(pt_frame_num)].fr_refcnt);
-            // // Delete PT if no more references
-            // if(invpt[INIDX(pt_frame_num)].fr_refcnt <= 0) {
-            //     log_mem("WOULD HAVE PREFERRED TO DELETE PT HERE BUT I DONT KNOW WHERE TO INCREMENT REFERENCE COUNT ADASDSAHDASHDASHDASHDASHDAS \n");
-            //     // deletept(pde);
-            // }
+            // Get frame of PT
+            fidx16 pt_frame_num = pde->pd_base;
+            // Decrease the reference count of the PT
+            invpt[INIDX(pt_frame_num)].fr_refcnt--;
+            log_mem("vmhfreemem - decreased refcnt of PT at frame %d to %d \n", pt_frame_num, invpt[INIDX(pt_frame_num)].fr_refcnt);
+            // Delete PT if no more references
+            if(invpt[INIDX(pt_frame_num)].fr_refcnt <= 0) {
+                log_mem("vmhfreemem - deleting PT at frame %d \n", pt_frame_num);
+                // deletept(pde);
+            }
         }
     }
 }

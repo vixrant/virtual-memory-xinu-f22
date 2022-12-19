@@ -3,3 +3,40 @@
 
 File is in org-mode format.
 
+* File additions/ Modules
+** frameblock.c
+- Adds functions for blocking processes waiting on frames
+- Implements a circular queue using array
+
+** pgfutil.c
+- Implements modular functions for each case of page fault handling
+- Each function is unit testable and runs with certain assumptions
+
+** testlab5.c and testlab6.c
+- Separates out the testing code from main.c
+
+* File changes
+** vmhfreemem.c
+- Now calls framewakeup() to wake up blocked processes
+- Added check for seg faults
+
+** pgfhandler.c
+- Removed logic for handling frames into pgfutil.c
+- Now only sets up the state and debug information of the system
+
+** pgfdisp.c
+- Some weird issue where I need two pushal and popal for kprintf to work in interrupts??
+- Common issue with other classmates
+
+** pagingmgmt.c
+- Added function to delete a page table when it is empty
+
+** kill.c
+- Calls framewakeup() after freeing frames
+
+** framemgmt.c
+- Added FIFO linked List
+- Added object-oriented functions has() and next() for stack and queue
+
+** paging.h
+- Make use of avail bits in PTE for marking VF -> E2 mappings separate from VF -> E1 mappings

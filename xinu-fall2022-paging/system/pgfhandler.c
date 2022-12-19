@@ -114,6 +114,12 @@ void pgfhandler(void) {
         }
     }
 
+    if(!swapped) { // Was a new page
+        // Increase reference count of PT frame by 1
+        pd_t *pde = getpde(pgfaddr);
+        invpt[INIDX(pde->pd_base)].fr_refcnt++;
+    }
+
     log_pgf("----- ---------- ----- \n");
     return;
 }
